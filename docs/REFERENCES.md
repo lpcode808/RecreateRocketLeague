@@ -19,3 +19,11 @@ Implementation APIs were checked against [Rapier's rigid-body guide](https://rap
 7. Replaced sparse boost particles with short continuous ribbons, bounded their length to keep them in front of the camera, and checked final gameplay/window sizes.
 
 The reference remains substantially richer in mesh detail, textures, lighting and effects. The work is a playable local recreation; an indistinguishable visual match was not achieved.
+
+## Continuation · 2026-09-04
+
+Compared the baseline and refined car at the same front three-quarter camera position, 42° field of view, field position and illumination in the live browser. The cabin now uses planar glass normals and a lower roof; the fenders have formed surfaces instead of round tubes. Split front lamps, twin rear lamps, vents, exhaust rims, rear diffuser and tire shoulders add detail. The first formed-fender pass covered too much tire and was narrowed after rendering. The official promotional image above remains a qualitative silhouette/material reference, not a matched-camera original-game measurement.
+
+Checked handling against RocketSim's [Car.cpp](https://github.com/ZealanL/RocketSim/blob/main/src/Sim/Car/Car.cpp), specifically `_UpdateWheels` and `_UpdateAirTorque`. Boost intentionally sets forward ground throttle, so that behavior was preserved. Opposite pitch suppresses the pitch component of a flip while its lateral component and timing window continue. The implementation maps that axis behavior into the existing angular-velocity controller; it does not reproduce the reference torque solver.
+
+An independent reviewer inspected the new front/rear captures and probed flip cancellation across front, back, side and diagonal inputs at multiple yaw orientations. No blocking regression was found. The car remains too simple and toy-like for Octane parity; stadium geometry, lighting and surface detail remain substantial gaps.

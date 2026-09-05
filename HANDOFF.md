@@ -99,3 +99,21 @@ Keep source, lockfile, tests and docs reproducible. Run relevant tests after cha
 Suggested fresh-agent kickoff:
 
 > Read HANDOFF.md and the linked docs. Continue improving this existing Rocket League recreation toward the user's original visual and gameplay bar. Start by running the game and comparing the actual pixels and handling to the references. Preserve working controls, physics and match rules. Choose the largest evidenced gap, implement a focused improvement, test it in the browser, and iterate. Report what improved and what remains an approximation; do not describe this baseline as an indistinguishable match.
+
+## Continuation exit · 2026-09-04 · car and flip cancellation
+
+Work is on **`improve/car-and-handling`**, based on a freshly fetched, current `main`. This continuation did not commit, push or publish. Check actual Git state on entry.
+
+**Changed:** Refined the procedural car's cabin height, glass normals, formed fenders, tire shoulders, lamps, vents, suspension and rear exhaust/diffuser detail. Browser comparison used identical camera/lighting for baseline and refinement; a too-wide first fender pass was narrowed. Fixed untextured parts are batched by material, reducing each car from 228 to 37 meshes while retaining four animated wheel groups. Triangles increased from 25,188 to 46,092; no sustained FPS improvement was measured.
+
+**Handling:** Added pitch-component cancellation during flips. Opposite pitch leaves a diagonal flip's lateral rotation and timer active; stale flip input is cleared on reset, expiry and self-righting. RocketSim's Car.cpp informed the axis behavior. Its intentionally forced forward ground throttle during boost is preserved. Do not restore the discarded reverse-plus-boost braking proposal or cancel a whole diagonal flip on opposite steering.
+
+**Verification:** 14/14 tests and production build pass; independent reviewer found no blocking regression. Browser front/rear comparison, synthetic driving/boost/jump/flip sequence, native B/C/R/P and menu Space, and 1440×900 / 1366×768 rendering were checked. A complete accelerated scripted match finished 0–32 with finite player positions. This is lifecycle/stability evidence, not human play or bot balance. See the appended verification section for precise limits and ignored evidence paths.
+
+**Next:** The car is visibly improved but still stubby and toy-like beside the official reference. Continue with stronger body topology/proportions and stadium illumination/geometry, checking fixed viewpoints. Human five-minute handling evaluation, instrumented flip timing, repeated reset margins, wall/post camera behavior and sustained FPS remain open. The code still uses an angular-velocity controller, not the original torque solver. The existing HUD and game register were preserved.
+
+**Role split:** Lead handled car assets, integration and browser verification; a bounded implementation subagent handled physics/tests; a fresh-context reviewer independently checked source, car captures and additional flip scenarios.
+
+### Publication approval · 2026-09-04
+
+Justin subsequently approved committing this continuation and pushing it to `main` before starting another task. The earlier uncommitted/no-push status describes the implementation exit, before this approval. The next task should resume from `main` after checking local/remote Git state; the remaining fidelity work above is unchanged.

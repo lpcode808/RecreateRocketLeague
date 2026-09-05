@@ -40,6 +40,8 @@ pnpm preview  # serve the production build locally
 
 Land all four wheels on the ball to restore a flip. Space rights an overturned car. Full boost pads refill to 100 and return after 10 seconds; small pads add 12 and return after 4 seconds. Supersonic car impacts can demolish the opponent, who respawns after 3 seconds.
 
+Hold opposite pitch during a directional flip to cancel its pitch rotation; a diagonal flip retains its lateral rotation. This is a custom approximation of the mechanic.
+
 ## What is implemented
 
 - Dynamic Rapier car and ball bodies, continuous collision detection, four suspension rays, lateral tire grip, curved floor-to-wall transitions, rounded arena corners, ceiling and goal colliders.

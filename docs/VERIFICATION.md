@@ -1,6 +1,6 @@
 # Verification · 2026-09-04
 
-## Automated simulation tests
+## Initial build: automated simulation tests
 
 `pnpm test`: **13 passing tests**, using real Rapier simulation and Node's test runner.
 
@@ -46,3 +46,16 @@ A deterministic 120-second driving/jumping/wall scenario produced no non-finite 
 The ignored `test-results/` directory holds iteration screenshots, close-up car checks, the official reference capture, viewport checks, `goal-celebration.png`, and `final-gameplay.png`. These are test evidence, not runtime assets.
 
 Exact original-game appearance, original-engine physics parity, competitive mechanic timing, extended human play, touch input, gamepads and cross-browser/device performance remain unverified.
+
+## Continuation checks · 2026-09-04
+
+- **14/14 tests pass** after adding diagonal pitch-cancel coverage and extending roof recovery to check stale flip-input cleanup. An independent reviewer also probed forward, backward, side and diagonal flips at multiple yaw orientations.
+- **Production build passes**; `git diff --check` is clean. The current JavaScript bundle is 988.48 kB gzipped. The embedded-WASM chunk warning remains. Dependencies were unchanged; the initial audit above was not rerun.
+- Matched front views of the old and new car and a new rear view were inspected in the Codex in-app browser. Fixed parts are combined by material: **228 → 37 meshes per car**, including hidden flame meshes; **25,188 → 46,092 triangles**. These are construction counts, not frame-rate measurements. Four wheel pivots and their independently rotating wheel groups remain intact.
+- A browser scenario dispatched W/Shift/D/Space/S keyboard events to the canvas, covering driving, boost, steering, jumping, a directional second jump and opposite pitch. It reached the side wall with finite position and rotation, 100 infinite boost and two consumed jumps. These were synthetic events, separate from the native key checks below.
+- Native B/C/R/P keys changed infinite boost, camera mode, recovery and pause state. Space activated the focused Resume button. Live gameplay/goal-reset sequences rendered at **1440×900** and **1366×768**; the settled laptop canvas matched the viewport with no horizontal document overflow.
+- An accelerated scripted full match reached `finished`, clock 0, score **0–32**, with finite player positions throughout. The driving script loops without aiming at the ball; the result checks goal/reset/clock completion, not bot balance or human playability. It is not a human five-minute play session.
+- No console errors on the final ordinary game page. The upstream Rapier initialization warning remains. An early local QA script dispatched synthetic events to `document` instead of the canvas and produced harness errors; the corrected sequence targeted the canvas.
+- Independent review found no blocking source or visual regression and judged the car visibly improved. It did not establish original-game parity or sustained frame-rate performance. No new sustained FPS claim is made.
+
+New ignored evidence: `continuation-baseline-front.png`, `continuation-car-front.png`, `continuation-car-rear.png`, `continuation-gameplay-1440.png`, `continuation-gameplay-1366.png`, `continuation-driving.txt` and `continuation-match.txt` under `test-results/`. The local `inspect.html`/`inspect.js` harness and baseline asset snapshot are also ignored and are not production entry points.

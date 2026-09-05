@@ -36,9 +36,9 @@ export class Physics {
     const body=this.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setLinearDamping(.02).setAngularDamping(1).setCcdEnabled(true).setCanSleep(false));
     // RocketSim Octane dimensions/offsets, at 50 source units per world unit; radius is included in the extents.
     const collider=this.world.createCollider(RAPIER.ColliderDesc.roundCuboid(.811994,.331591,1.15007,.055).setTranslation(0,.4151,-.277514).setMass(CAR.mass).setFriction(.15).setRestitution(.05),body);
-    return {body,collider,team,boost:33,grounded:false,wheelContacts:0,normal:UP.clone(),jumpCount:0,airTime:0,jumpAge:10,flipTime:0,hitCooldown:0,demoTime:0,boosting:false,speed:0,steer:0,flipResets:0};
+    return {body,collider,team,boost:33,grounded:false,wheelContacts:0,normal:UP.clone(),jumpCount:0,airTime:0,jumpAge:10,flipTime:0,flipInput:null,hitCooldown:0,demoTime:0,boosting:false,speed:0,steer:0,flipResets:0};
   }
-  resetCar(car){const z=car.team===0?65:-65;car.body.setTranslation({x:0,y:.8,z},true);car.body.setRotation(new T.Quaternion().setFromAxisAngle(UP,car.team===0?0:Math.PI),true);car.body.setLinvel({x:0,y:0,z:0},true);car.body.setAngvel({x:0,y:0,z:0},true);car.body.resetForces(true);car.body.resetTorques(true);car.jumpCount=0;car.jumpAge=10;car.flipTime=0;car.demoTime=0;car.boosting=false;car.speed=0;car.steer=0;car.airTime=0;car.grounded=false;car.hasFlipReset=false;}
+  resetCar(car){const z=car.team===0?65:-65;car.body.setTranslation({x:0,y:.8,z},true);car.body.setRotation(new T.Quaternion().setFromAxisAngle(UP,car.team===0?0:Math.PI),true);car.body.setLinvel({x:0,y:0,z:0},true);car.body.setAngvel({x:0,y:0,z:0},true);car.body.resetForces(true);car.body.resetTorques(true);car.jumpCount=0;car.jumpAge=10;car.flipTime=0;car.flipInput=null;car.demoTime=0;car.boosting=false;car.speed=0;car.steer=0;car.airTime=0;car.grounded=false;car.hasFlipReset=false;}
   reset(){this.cars.forEach(c=>{this.resetCar(c);c.boost=33;});this.ball.setTranslation({x:0,y:BALL_RADIUS+.04,z:0},true);this.ball.setLinvel({x:0,y:0,z:0},true);this.ball.setAngvel({x:0,y:0,z:0},true);}
   updateCar(car,input,dt,infinite=false){
     input={throttle:0,steer:0,roll:0,boost:false,jump:false,jumpHeld:false,drift:false,...input};
@@ -80,7 +80,7 @@ export class Physics {
     }
     if(input.jump){
       if(up.y<-.2&&pos.y<1.25&&car.airTime>.3){
-        body.applyImpulse(UP.clone().multiplyScalar(CAR.mass*4),true);car.flipAxis=forward;car.flipTime=.4;car.flipSpeed=Math.PI/.4;car.jumpCount=1;car.jumpAge=0;
+        body.applyImpulse(UP.clone().multiplyScalar(CAR.mass*4),true);car.flipAxis=forward;car.flipInput=null;car.flipTime=.4;car.flipSpeed=Math.PI/.4;car.jumpCount=1;car.jumpAge=0;
       }else if(car.grounded || (car.jumpCount===0&&car.airTime<.1&&!car.hasFlipReset)){
         body.applyImpulse(up.clone().multiplyScalar(CAR.mass*CAR.jumpSpeed),true);car.jumpCount=1;car.jumpAge=0;car.grounded=false;
       }else if(car.jumpCount===0 || (car.jumpCount===1&&car.jumpAge<CAR.doubleWindow)){
@@ -88,13 +88,20 @@ export class Physics {
         if(directional){
           const direction=forward.clone().multiplyScalar(input.throttle).addScaledVector(right,input.steer).normalize();
           body.applyImpulse(direction.multiplyScalar(CAR.mass*10).addScaledVector(UP,CAR.mass*1.5),true);
-          car.flipAxis=right.clone().multiplyScalar(-input.throttle).addScaledVector(forward,input.steer).normalize();car.flipTime=.65;car.flipSpeed=2*Math.PI/.65;
+          car.flipAxis=right.clone().multiplyScalar(-input.throttle).addScaledVector(forward,input.steer).normalize();car.flipInput={throttle:input.throttle,steer:input.steer};car.flipTime=.65;car.flipSpeed=2*Math.PI/.65;
         }else body.applyImpulse(up.clone().multiplyScalar(CAR.mass*CAR.jumpSpeed),true);
         car.jumpCount=2;
       }
     }
     if(input.jumpHeld&&car.jumpAge<.2&&car.jumpCount===1)body.applyImpulse(up.clone().multiplyScalar(CAR.mass*29.16*dt),true);
-    if(car.flipTime>0){car.flipTime-=dt;body.setAngvel(car.flipAxis.clone().multiplyScalar(car.flipSpeed),true);if(car.flipTime<=0)body.setAngvel({x:0,y:0,z:0},true);}
+    if(car.flipTime>0){
+      // RocketSim scales only the pitch part of a dodge when the player holds
+      // opposite pitch; its yaw/roll part continues through the flip window.
+      const pitchCancel=car.flipInput?.throttle*input.throttle<-.1?Math.min(Math.abs(input.throttle),1):0;
+      const pitchComponent=right.clone().multiplyScalar(car.flipAxis.dot(right));
+      car.flipTime-=dt;body.setAngvel(car.flipAxis.clone().addScaledVector(pitchComponent,-pitchCancel).multiplyScalar(car.flipSpeed),true);
+      if(car.flipTime<=0){body.setAngvel({x:0,y:0,z:0},true);car.flipInput=null;}
+    }
     car.boosting=input.boost&&(infinite||car.boost>0);
     if(car.boosting){body.applyImpulse(forward.clone().multiplyScalar(CAR.mass*CAR.boostAcceleration*dt),true);car.boost=infinite?100:Math.max(0,car.boost-CAR.boostDrain*dt);}
     if(infinite)car.boost=100;

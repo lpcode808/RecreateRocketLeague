@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as T from 'three';
 import { Match, goalForBall } from '../src/match.js';
 import { Physics } from '../src/physics.js';
 import { FIELD, BALL_RADIUS, STEP, PAD_POSITIONS } from '../src/config.js';
@@ -58,13 +59,20 @@ test('four wheel contacts on the ball restore an aerial flip',()=>{
  advance(STEP,{jump:true,throttle:1});assert.equal(c.jumpCount,2);assert.ok(c.flipTime>0);
 });
 test('a roof-down car can use jump to right itself',()=>{
- physics.reset();const c=physics.cars[0];c.body.setTranslation({x:30,y:.5,z:30},true);c.body.setRotation({x:0,y:0,z:1,w:0},true);advance(.6);advance(STEP,{jump:true});advance(.65);
+ physics.reset();const c=physics.cars[0];c.body.setTranslation({x:30,y:.5,z:30},true);c.body.setRotation({x:0,y:0,z:1,w:0},true);advance(.6);c.flipInput={throttle:1,steer:1};advance(STEP,{jump:true});assert.equal(c.flipInput,null);advance(.65);
  const q=c.body.rotation();const upY=1-2*(q.x*q.x+q.z*q.z);assert.ok(upY>.7);
 });
 test('boost does not force aerial pitch or turn a neutral double jump into a flip',()=>{
  physics.reset();advance(.6);const c=physics.cars[0];c.boost=100;
  advance(STEP,{jump:true});advance(.25,{boost:true});const q=c.body.rotation();assert.ok(Math.abs(q.x)<.08);
  advance(STEP,{jump:true,boost:true});assert.equal(c.jumpCount,2);assert.ok(c.flipTime<=0);assert.ok(c.body.linvel().y>4);
+});
+test('opposite pitch cancels only the pitch part of a diagonal flip',()=>{
+ physics.reset();advance(.6);const c=physics.cars[0];
+ advance(STEP,{jump:true});advance(.12,{jumpHeld:true});advance(STEP,{jump:true,throttle:1,steer:1});
+ assert.ok(c.flipTime>.5);advance(STEP,{throttle:-1});
+ const q=new T.Quaternion().copy(c.body.rotation()),right=new T.Vector3(1,0,0).applyQuaternion(q),forward=new T.Vector3(0,0,-1).applyQuaternion(q),angular=new T.Vector3(c.body.angvel().x,c.body.angvel().y,c.body.angvel().z);
+ assert.ok(Math.abs(angular.dot(right))<.1);assert.ok(Math.abs(angular.dot(forward))>6);assert.ok(c.flipTime>.5);
 });
 test('every kickoff, including overtime, gives a GO cue',()=>{
  const m=new Match();m.phase='kickoff';m.phaseTime=.001;m.time=120;

@@ -1,5 +1,6 @@
 import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 export const material=(color,metalness=.1,roughness=.5)=>new T.MeshStandardMaterial({color,metalness,roughness});
 export const glow=(color,intensity=2)=>new T.MeshStandardMaterial({color,emissive:color,emissiveIntensity:intensity});
 export function box(parent,size,pos,mat,radius=0){const mesh=new T.Mesh(radius?new RoundedBoxGeometry(...size,2,radius):new T.BoxGeometry(...size),mat);mesh.position.set(...pos);parent.add(mesh);return mesh;}
@@ -9,53 +10,98 @@ export function canvasTexture(w,h,paint){const c=document.createElement('canvas'
 export function labelTexture(text,color='#fff',background='#07152b',w=1024,h=128){return canvasTexture(w,h,(ctx)=>{ctx.fillStyle=background;ctx.fillRect(0,0,w,h);ctx.fillStyle=color;ctx.font=`italic 700 ${Math.round(h*.57)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,w/2,h*.52,w*.91);});}
 // Cross sections keep the sloping hood and tapered cockpit distinct from a box car.
 function hull(sections,mat){const vertices=[],indices=[];sections.forEach(([z,y,w,bottom])=>vertices.push(-w,bottom,z,w,bottom,z,-w,y,z,w,y,z));for(let i=0;i<sections.length-1;i++){const a=i*4,b=a+4;indices.push(a,b,a+1,a+1,b,b+1,a+2,a+3,b+2,a+3,b+3,b+2,a,a+2,b,a+2,b+2,b,a+1,b+1,a+3,a+3,b+1,b+3);}const last=(sections.length-1)*4;indices.push(0,1,2,1,3,2,last,last+2,last+1,last+1,last+2,last+3);for(let i=0;i<indices.length;i+=3)[indices[i+1],indices[i+2]]=[indices[i+2],indices[i+1]];const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();return new T.Mesh(g,mat);}
+// A formed fender has a broad top and a thin side lip, rather than a roll-cage tube.
+function fender(parent,side,z,paint,dark){
+  const shape=new T.Shape(),outer=.438,inner=.4,start=.22,end=Math.PI-.22;
+  shape.absarc(0,0,outer,start,end,false);
+  shape.absarc(0,0,inner,end,start,true);shape.closePath();
+  const geo=new T.ExtrudeGeometry(shape,{depth:.19,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.008,bevelThickness:.008,curveSegments:28});
+  const mesh=new T.Mesh(geo,paint);mesh.rotation.y=Math.PI/2;mesh.position.set(side<0?-.95:.76,-.19,z);parent.add(mesh);
+  const lip=new T.Mesh(new T.TorusGeometry(.403,.012,5,40,Math.PI-.44),dark);
+  lip.rotation.set(0,Math.PI/2,.22);lip.position.set(side*.963,-.19,z);parent.add(lip);
+}
+// Batch fixed, untextured car parts by material; wheel pivots remain independent.
+function batchCarParts(parent){
+  const batches=new Map();
+  for(const mesh of [...parent.children]){
+    if(!mesh.isMesh)continue;
+    mesh.updateMatrix();
+    const geometry=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();
+    geometry.deleteAttribute('uv');geometry.applyMatrix4(mesh.matrix);
+    if(!batches.has(mesh.material))batches.set(mesh.material,[]);
+    batches.get(mesh.material).push(geometry);parent.remove(mesh);mesh.geometry.dispose();
+  }
+  for(const [mat,parts] of batches){const geometry=mergeGeometries(parts);parts.forEach(g=>g.dispose());parent.add(new T.Mesh(geometry,mat));}
+}
 export function createCar(color){
-  const group=new T.Group(),paint=material(color,.65,.27),dark=material(0x10171c,.35,.45),metal=material(0x788b94,.8,.25),glass=material(0x122833,.6,.13),white=material(0xdde9df,.5,.3);
+  const group=new T.Group(),paint=material(color,.48,.38),dark=material(0x10171c,.25,.5),metal=material(0x788b94,.8,.32),glass=material(0x101f28,.35,.22),white=material(0xdde9df,.3,.4);
   const chassis=hull([[-1.27,.06,.48,-.24],[-1.05,.21,.66,-.27],[.15,.26,.73,-.28],[1.13,.12,.64,-.25]],paint);group.add(chassis);
   box(group,[1.55,.2,1.75],[0,-.23,.07],dark,.07);
   box(group,[1.15,.29,.09],[0,-.005,1.14],paint,.04);
-  const cab=hull([[-.52,.24,.59,.17],[-.05,.82,.45,.19],[.57,.79,.43,.2],[.89,.3,.57,.15]],glass);group.add(cab);
-  box(group,[.89,.065,.59],[0,.82,.27],paint,.045);
+  // Split the cabin into crisp planar panes: shared normals made the old glass look inflated.
+  const cab=hull([[-.5,.25,.55,.19],[-.06,.67,.43,.2],[.48,.66,.42,.2],[.85,.27,.54,.17]],glass);
+  const paneGeometry=cab.geometry.toNonIndexed();paneGeometry.computeVertexNormals();cab.geometry.dispose();cab.geometry=paneGeometry;group.add(cab);
+  box(group,[.9,.065,.57],[0,.695,.22],paint,.025);
   for(const s of [-1,1]){
-    tube(group,[[s*.59,.23,-.55],[s*.45,.82,-.05],[s*.43,.8,.57],[s*.57,.23,.92]],.045,paint);
-    tube(group,[[s*.49,.37,.55],[s*.57,.28,.94],[s*.61,.06,1.08]],.045,metal);
+    tube(group,[[s*.55,.25,-.5],[s*.43,.69,-.06],[s*.42,.68,.49],[s*.54,.27,.85]],.033,paint);
+    tube(group,[[s*.435,.67,.33],[s*.565,.23,.38]],.029,paint);
+    tube(group,[[s*.48,.37,.6],[s*.57,.25,.94],[s*.61,.06,1.08]],.034,metal);
     box(group,[.105,.015,1.12],[s*.25,.225,-.66],white,.01).rotation.x=-.065;
-    box(group,[.11,.015,.54],[s*.25,.862,.27],white);
-    box(group,[.35,.13,.055],[s*.43,.04,-1.265],glow(0xe4f5ff,3),.025);
-    box(group,[.25,.08,.055],[s*.48,.02,1.14],glow(0xff2215,2),.015);
+    box(group,[.11,.015,.51],[s*.25,.735,.22],white);
+    box(group,[.38,.16,.075],[s*.43,.04,-1.265],dark,.025);
+    for(const dx of [-.087,.087])box(group,[.135,.084,.024],[s*.43+dx,.045,-1.31],glow(0xe4f5ff,1.6),.018);
+    box(group,[.29,.12,.07],[s*.49,.025,1.155],dark,.03);
+    for(const dx of [-.068,.068]){const lamp=cylinder(group,.041,.025,[s*.49+dx,.025,1.2],glow(0xff321b,1.7));lamp.rotation.x=Math.PI/2;}
     box(group,[.1,.29,.12],[s*.51,.28,.99],dark);
     box(group,[.05,.15,.36],[s*.81,.49,1.03],paint,.02);
-    // Octane-like open wheel arches, exposed tires, and wide rear wing.
+    // Exposed wheels, formed fenders and visible suspension keep the buggy silhouette.
     for(const z of [-.77,.77]){
-      tube(group,[[s*.83,-.1,z-.42],[s*.83,.28,z-.3],[s*.83,.36,z],[s*.83,.28,z+.31],[s*.83,-.1,z+.41]],.075,paint);
+      fender(group,s,z,paint,dark);
       tube(group,[[s*.42,-.16,z],[s*.79,-.22,z]],.045,metal);
       tube(group,[[s*.58,.12,z-.08],[s*.81,-.18,z+.08]],.04,metal);
+      const spring=cylinder(group,.052,.25,[s*.66,-.02,z+.05],dark);spring.rotation.z=s*.4;
+      for(let n=0;n<5;n++){const coil=new T.Mesh(new T.TorusGeometry(.057,.012,4,10),metal);coil.rotation.x=Math.PI/2;coil.position.set(s*.66,-.11+n*.042,z+.05);group.add(coil);}
     }
     const exhaust=cylinder(group,.115,.28,[s*.32,-.05,1.23],metal);exhaust.rotation.x=Math.PI/2;
     const interior=cylinder(group,.085,.285,[s*.32,-.05,1.24],dark);interior.rotation.x=Math.PI/2;
+    const nozzleLip=new T.Mesh(new T.TorusGeometry(.102,.018,6,20),metal);nozzleLip.position.set(s*.32,-.05,1.39);group.add(nozzleLip);
     box(group,[.05,.08,.28],[s*.76,.26,-.12],dark,.02);
+    box(group,[.07,.12,.57],[s*.73,-.06,.04],paint,.02);
+    for(let n=0;n<4;n++)box(group,[.015,.085,.035],[s*.77,-.045,-.1+n*.09],dark,.005);
+    // Small mirror, door seam and rear deck vents break up large unarticulated surfaces.
+    box(group,[.16,.065,.105],[s*.615,.37,-.24],dark,.025);
+    tube(group,[[s*.69,.22,-.2],[s*.725,-.07,-.08],[s*.70,-.08,.32]],.009,dark);
+    for(let n=0;n<4;n++)box(group,[.19,.025,.025],[s*.29,.275,.73+n*.065],dark);
   }
-  box(group,[1.71,.1,.4],[0,.48,1.03],paint,.035);
+  box(group,[1.71,.075,.35],[0,.48,1.03],paint,.025);
+  box(group,[1.61,.025,.055],[0,.526,1.175],white,.008);
+  box(group,[.99,.17,.075],[0,-.18,1.16],dark,.025);
+  for(const x of [-.4,-.2,0,.2,.4])box(group,[.025,.105,.22],[x,-.22,1.18],metal,.006);
+  box(group,[.37,.14,.07],[0,.08,1.205],dark,.018);
+  for(let n=0;n<4;n++)box(group,[.3,.012,.02],[0,.025+n*.03,1.25],metal);
   box(group,[1.28,.12,.15],[0,-.15,-1.26],metal,.035);
   box(group,[.42,.12,.03],[0,-.04,-1.35],dark,.025);
   for(let x=-.15;x<=.15;x+=.075)box(group,[.025,.08,.02],[x,-.04,-1.372],metal);
   box(group,[.46,.11,.28],[0,.26,-.58],dark,.025);
-  tube(group,[[.33,.8,.45],[.36,1.28,.55]],.012,dark);
+  tube(group,[[.33,.71,.45],[.36,1.05,.55]],.009,dark);
   for(let z=-.66;z<-.45;z+=.07)box(group,[.38,.016,.02],[0,.322,z],metal);
   const wheels=[];
   const tireMat=material(0x14181b,.03,.85);
   for(const x of [-.83,.83])for(const z of [-.77,.77]){
     const pivot=new T.Group();pivot.position.set(x,-.19,z);group.add(pivot);const wheel=new T.Group();pivot.add(wheel);
-    const tire=new T.Mesh(new T.CylinderGeometry(.365,.365,.29,24),tireMat);tire.rotation.z=Math.PI/2;wheel.add(tire);
+    const tire=new T.Mesh(new T.CylinderGeometry(.35,.35,.25,32),tireMat);tire.rotation.z=Math.PI/2;wheel.add(tire);
     for(const s of [-1,1]){
+      const shoulder=new T.Mesh(new T.TorusGeometry(.302,.06,8,32),tireMat);shoulder.rotation.y=Math.PI/2;shoulder.position.x=s*.093;wheel.add(shoulder);
       const rim=new T.Mesh(new T.CylinderGeometry(.245,.245,.015,20),metal);rim.rotation.z=Math.PI/2;rim.position.x=s*.153;wheel.add(rim);
       const disk=new T.Mesh(new T.CylinderGeometry(.18,.18,.02,16),dark);disk.rotation.z=Math.PI/2;disk.position.x=s*.165;wheel.add(disk);
       for(let n=0;n<6;n++){const spoke=box(wheel,[.022,.055,.37],[s*.178,0,0],white,.009);spoke.rotation.x=n*Math.PI/3;}
       const hub=new T.Mesh(new T.CylinderGeometry(.065,.065,.035,12),paint);hub.rotation.z=Math.PI/2;hub.position.x=s*.18;wheel.add(hub);
     }
     for(let n=0;n<24;n++){const a=n*Math.PI/12;const tread=box(wheel,[.285,.014,.06],[0,Math.cos(a)*.366,Math.sin(a)*.366],dark);tread.rotation.x=a;}
+    batchCarParts(wheel);
     wheels.push({pivot,wheel,front:z<0});
   }
+  batchCarParts(group);
   group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
   const flame=new T.Group();group.add(flame);
   for(const s of [-1,1]){
