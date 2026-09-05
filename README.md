@@ -2,6 +2,8 @@
 
 A playable Three.js / Rapier browser game. It opens directly on the pitch, with a five-minute 1v1 against Maverick. The pause menu includes solo practice and a performance graphics setting.
 
+The original build prompt came from [a post by @LLMJunky (am.will) on X](https://x.com/LLMJunky/status/2096043707015274818?s=20).
+
 **Continuing development? Read [HANDOFF.md](HANDOFF.md)** for the current baseline, next priorities, known limitations and regression notes.
 
 **Curious how this was built?** [How It Was Built](https://lpcode808.github.io/RecreateRocketLeague/how-it-was-built/) is a plain-language, timestamped play-by-play of the AI agent sessions that produced this game in one evening, retold from the session logs for non-technical readers. Source: [public/how-it-was-built/index.html](public/how-it-was-built/index.html).
