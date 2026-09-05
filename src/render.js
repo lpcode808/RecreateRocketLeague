@@ -4,7 +4,8 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { FIELD, BALL_RADIUS, BLUE, ORANGE, clamp } from './config.js';
+import { BALL_RADIUS, BLUE, ORANGE, clamp } from './config.js';
+import { containCamera, smoothHeading } from './camera.js';
 import { createCar, createBall, canvasTexture } from './assets.js';
 import { createArena } from './arena.js';
 import { Effects } from './effects.js';
@@ -49,19 +50,19 @@ export class Renderer{
     for(const p of this.pads){const active=p.cooldown<=0;p.ring.material.emissiveIntensity=active?2.2:.05;p.core.visible=active;if(p.core.userData.orb){p.core.userData.orb.visible=active;p.core.userData.orb.rotation.y=this.time;p.core.userData.orb.position.y=.85+Math.sin(this.time*2)*.1;}}
     this.effects.update(paused?0:dt);
     const car=physics.cars[0],pos=new T.Vector3().copy(car.body.translation()),q=new T.Quaternion().copy(car.body.rotation());
-    let forward=new T.Vector3(0,0,-1).applyQuaternion(q);forward.y=0;if(forward.lengthSq()>.15)this.lastForward.lerp(forward.normalize(),1-Math.exp(-dt*7)).normalize();forward=this.lastForward.clone();
-    if(this.cameraMode==='ball'){const toward=new T.Vector3().copy(bp).sub(pos);toward.y=0;if(toward.length()>3)forward.lerp(toward.normalize(),.95).normalize();}
+    let forward=new T.Vector3(0,0,-1).applyQuaternion(q);forward.y=0;if(forward.lengthSq()>.15){const heading=smoothHeading(this.lastForward,forward.normalize(),1-Math.exp(-dt*7));this.lastForward.set(heading.x,0,heading.z);}forward=this.lastForward.clone();
+    if(this.cameraMode==='ball'){const toward=new T.Vector3().copy(bp).sub(pos);toward.y=0;if(toward.length()>3){const heading=smoothHeading(forward,toward.normalize(),.95);forward.set(heading.x,0,heading.z);}}
     const speed=car.speed,desired=pos.clone().addScaledVector(forward,-(5.4+speed*.02));desired.y=pos.y+2.2+Math.min(speed*.006,.3);
     if(this.cameraMode==='ball'){const elevation=clamp(bp.y-pos.y,0,30);desired.addScaledVector(forward,-elevation*.15);desired.y+=elevation*.12;}
     const velocity=new T.Vector3().copy(car.body.linvel());desired.addScaledVector(velocity,.1);
-    desired.x=clamp(desired.x,-FIELD.x+1.3,FIELD.x-1.3);desired.z=clamp(desired.z,-FIELD.z-FIELD.goalDepth+1.5,FIELD.z+FIELD.goalDepth-1.5);desired.y=clamp(desired.y,1.5,FIELD.height-1.2);
-    if(Math.abs(desired.z)>FIELD.z-1&&Math.abs(desired.x)>FIELD.goalWidth/2-1)desired.z=clamp(desired.z,-FIELD.z+1,FIELD.z-1);
+    Object.assign(desired,containCamera(desired));
     if(car.demoTime>0)desired.set(0,18,70);
     this.camera.position.lerp(desired,1-Math.exp(-dt*8));const lookTarget=pos.clone().addScaledVector(forward,15);lookTarget.y+=2;
     lookTarget.addScaledVector(velocity,.065);
     if(this.cameraMode==='ball'){lookTarget.lerp(new T.Vector3().copy(bp),.65);lookTarget.y=Math.min(lookTarget.y,pos.y+8);}
     this.look.lerp(lookTarget,1-Math.exp(-dt*12));this.camera.lookAt(this.look);
     if(this.shake>.001){this.camera.position.x+=(Math.random()-.5)*this.shake;this.camera.position.y+=(Math.random()-.5)*this.shake;this.shake*=Math.exp(-dt*6);}
+    Object.assign(this.camera.position,containCamera(this.camera.position));
     const targetFov=90+(car.boosting?5:0);this.camera.fov+=(targetFov-this.camera.fov)*(1-Math.exp(-dt*3));this.camera.updateProjectionMatrix();
     this.composer.render();
   }

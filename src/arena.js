@@ -2,6 +2,19 @@ import * as T from 'three';
 import { FIELD as F, BLUE, ORANGE, PAD_POSITIONS } from './config.js';
 import { box, cylinder, material, glow, tube, canvasTexture, labelTexture } from './assets.js';
 import { cornerRamp } from './arena-geometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+// Stadium architecture never moves. Combine opaque parts sharing a material;
+// keep transparent cage surfaces and animated boost pads independently sorted.
+function batchArchitecture(arena){
+  const batches=new Map();
+  for(const mesh of [...arena.children]){
+    if(!mesh.isMesh||mesh.isInstancedMesh||mesh.material.transparent)continue;
+    mesh.updateMatrix();const geo=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();geo.applyMatrix4(mesh.matrix);
+    if(!batches.has(mesh.material))batches.set(mesh.material,[]);
+    batches.get(mesh.material).push(geo);arena.remove(mesh);mesh.geometry.dispose();
+  }
+  for(const [mat,parts] of batches){const geo=mergeGeometries(parts);parts.forEach(p=>p.dispose());const mesh=new T.Mesh(geo,mat);mesh.receiveShadow=true;arena.add(mesh);}
+}
 export function createArena(scene){
   const arena=new T.Group();scene.add(arena);
   const concrete=material(0x273449,.3,.75),steel=material(0x526479,.65,.35),dark=material(0x0c1627,.2,.8);
@@ -20,10 +33,14 @@ export function createArena(scene){
   });
   const field=box(arena,[F.x*2,.15,F.z*2],[0,-.09,0],new T.MeshStandardMaterial({map:turf,color:0xb6cd78,roughness:1,envMapIntensity:.12}));field.receiveShadow=true;
   const wallMap=canvasTexture(256,256,(c)=>{c.clearRect(0,0,256,256);c.strokeStyle='rgba(181,220,239,.23)';c.lineWidth=1.2;for(let row=-1;row<7;row++)for(let col=-1;col<6;col++){const x=col*64+(row%2)*32,y=row*55.4;c.beginPath();for(let n=0;n<=6;n++){let a=n*Math.PI/3;c.lineTo(x+37*Math.sin(a),y+37*Math.cos(a));}c.stroke();}});wallMap.wrapS=wallMap.wrapT=T.RepeatWrapping;wallMap.repeat.set(16,3);
-  const glass=new T.MeshBasicMaterial({map:wallMap,transparent:true,opacity:.34,side:T.DoubleSide,depthWrite:false});
+  const glass=new T.MeshBasicMaterial({map:wallMap,transparent:true,opacity:.19,side:T.DoubleSide,depthWrite:false});
+  const tunnelMap=canvasTexture(256,256,c=>{c.fillStyle='#b2b7ba';c.fillRect(0,0,256,256);c.strokeStyle='#737e87';c.lineWidth=3;c.strokeRect(4,4,248,248);c.strokeStyle='#939da4';c.lineWidth=1;for(let y=12;y<256;y+=12)for(let x=12;x<256;x+=12){c.beginPath();c.arc(x,y,2,0,Math.PI*2);c.stroke();}});
+  tunnelMap.wrapS=tunnelMap.wrapT=T.RepeatWrapping;tunnelMap.repeat.set(10,4);
   for(const s of [-1,1]){
     box(arena,[.12,F.height,F.z*2],[s*F.x,F.height/2,0],glass);
-    box(arena,[F.x*2,F.height,.12],[0,F.height/2,s*F.z],glass);
+    // Leave the mouth open: a full-width cage used to draw across the goal.
+    for(const side of [-1,1])box(arena,[F.x-F.goalWidth/2,F.height,.12],[side*(F.x+F.goalWidth/2)/2,F.height/2,s*F.z],glass);
+    box(arena,[F.goalWidth,F.height-F.goalHeight,.12],[0,(F.height+F.goalHeight)/2,s*F.z],glass);
     const tint=s<0?ORANGE:BLUE;
     box(arena,[.35,1.4,F.z*2],[s*(F.x+.2),1,0],dark);
     for(const half of [-1,1])box(arena,[.2,.14,F.z],[s*(F.x-.1),1.8,half*F.z/2],glow(half<0?ORANGE:BLUE,1.5));
@@ -38,8 +55,23 @@ export function createArena(scene){
     box(arena,[F.goalWidth-2,.65,.7],[0,F.goalHeight,s*F.z],frame,.2);
     box(arena,[F.goalWidth-2,.1,.12],[0,F.goalHeight-.3,s*(F.z-.4)],gm);
     box(arena,[F.goalWidth,.15,F.goalDepth],[0,.015,s*(F.z+F.goalDepth/2)],material(s<0?0x795936:0x244e76,.3,.6));
-    box(arena,[F.goalWidth,F.goalHeight,.15],[0,F.goalHeight/2,s*(F.z+F.goalDepth)],glass);
-    box(arena,[F.goalWidth,.1,F.goalDepth],[0,F.goalHeight,s*(F.z+F.goalDepth/2)],glass);
+    const lining=material(s<0?0x382d24:0x1c3046,.35,.68);
+    lining.map=tunnelMap;
+    // Recessed tunnel and repeating ribs give the scoring opening real depth.
+    box(arena,[F.goalWidth,F.goalHeight,.15],[0,F.goalHeight/2,s*(F.z+F.goalDepth)],lining);
+    box(arena,[F.goalWidth,.1,F.goalDepth],[0,F.goalHeight,s*(F.z+F.goalDepth/2)],lining);
+    for(const side of [-1,1])box(arena,[.16,F.goalHeight,F.goalDepth],[side*(half+.12),F.goalHeight/2,s*(F.z+F.goalDepth/2)],lining);
+    for(let depth=3;depth<F.goalDepth;depth+=4){
+      const z=s*(F.z+depth);
+      tube(arena,[[-half,.15,z],[-half,F.goalHeight-.8,z],[-half+.8,F.goalHeight-.2,z],[half-.8,F.goalHeight-.2,z],[half,F.goalHeight-.8,z],[half,.15,z]],.12,steel);
+      box(arena,[F.goalWidth-2,.05,.12],[0,F.goalHeight-.3,z],gm);
+    }
+    for(const side of [-1,1]){
+      box(arena,[.12,.06,F.goalDepth],[side*(half-.6),.12,s*(F.z+F.goalDepth/2)],gm);
+      box(arena,[2.2,F.goalHeight+1,1.2],[side*(half+1.4),(F.goalHeight+1)/2,s*(F.z+.8)],steel);
+      tube(arena,[[side*(half-1),.4,s*(F.z+F.goalDepth-.2)],[side*(half-1),F.goalHeight-1,s*(F.z+F.goalDepth-.2)],[0,F.goalHeight-1,s*(F.z+F.goalDepth-.2)]],.055,gm);
+    }
+    box(arena,[F.goalWidth+5,1.1,1.2],[0,F.goalHeight+1,s*(F.z+.8)],steel);
     for(let x=-half;x<half;x+=3)tube(arena,[[x,0,s*(F.z+F.goalDepth)],[x,F.goalHeight,s*(F.z+F.goalDepth)],[x,F.goalHeight,s*F.z]],.025,frame);
     box(arena,[F.goalWidth,.06,.2],[0,.035,s*F.z],material(0xffffff));
   }
@@ -115,6 +147,15 @@ export function createArena(scene){
   // Monument silhouette above the far seating bowl.
   const gold=material(0xb3a272,.78,.3);
   for(const s of [-1,1]){cylinder(arena,6,2,[0,43,s*(F.z+40)],gold);cylinder(arena,1.6,8,[0,48,s*(F.z+40)],gold,2.8);const shield=new T.Mesh(new T.IcosahedronGeometry(6,0),gold);shield.scale.set(1,1.2,.45);shield.position.set(0,56,s*(F.z+40));arena.add(shield);}
+  // Visible end-bowl floodlight arrays, with no extra per-pixel light sources.
+  const lamp=glow(0xeaf4ff,4),housing=material(0x172438,.65,.4);
+  for(const end of [-1,1])for(const side of [-1,1]){
+    const x=side*49,z=end*(F.z+23);
+    for(const dx of [-7,7])tube(arena,[[x+dx,26,z+end*3],[x+dx,40,z],[x+dx,43,z]],.17,steel);
+    box(arena,[19,3.4,1.1],[x,40,z],housing);
+    for(let row=0;row<2;row++)for(let n=0;n<12;n++)box(arena,[1,.72,.15],[x-8.3+n*1.5,39.2+row*1.45,z-end*.65],lamp);
+  }
+  batchArchitecture(arena);
   const pads=PAD_POSITIONS.map(p=>{
     const group=new T.Group();group.position.set(p.x,.08,p.z);arena.add(group);
     cylinder(group,p.large?1.5:.8,.1,[0,0,0],material(0x24272a,.8,.3));

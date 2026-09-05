@@ -4,7 +4,8 @@ export class Controls {
     window.addEventListener('keydown',e=>{
       if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)&&e.code!=='Escape') return;
       if(e.target.closest('#pause-overlay')&&['Space','Enter','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))return;
-      if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)) e.preventDefault();
+      // Tab belongs to the browser so the pause dialog can cycle through its controls.
+      if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
       if (!e.repeat) {
         if(e.code==='Space') this.jump=true;
         const actions={KeyR:'reset',KeyC:'camera',KeyB:'infinite',Escape:'pause',KeyP:'pause',KeyH:'help',KeyM:'mute'};

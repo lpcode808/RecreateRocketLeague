@@ -4,6 +4,8 @@ A playable Three.js / Rapier browser game. It opens directly on the pitch, with 
 
 **Continuing development? Read [HANDOFF.md](HANDOFF.md)** for the current baseline, next priorities, known limitations and regression notes.
 
+**Ready to playtest:** follow the [five-minute human test](docs/HUMAN-TEST.md). The latest pass fixes a defensive bot stall, pause-menu Tab navigation and camera containment, and adds recessed goal tunnels and end-bowl floodlights.
+
 ## Run
 
 Requires Node 20.19+ or 22.12+ and pnpm 10.
@@ -20,6 +22,11 @@ pnpm test     # deterministic match and real Rapier physics tests
 pnpm build    # production files in dist/
 pnpm preview  # serve the production build locally
 ```
+
+## GitHub Pages
+
+The public game is hosted at https://lpcode808.github.io/RecreateRocketLeague/.
+Pages uses **GitHub Actions** as its source. `.github/workflows/pages.yml` tests and builds each push to `main`, then deploys only `dist/`. `vite.config.js` sets the repository asset prefix in Actions while preserving `/` for local development. Do not switch Pages back to serving the source branch directly.
 
 ## Controls
 

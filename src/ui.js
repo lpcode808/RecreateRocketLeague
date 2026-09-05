@@ -21,7 +21,7 @@ export class UI {
   toast(text){this.el.toast.textContent=text;this.toastTime=2.4;this.el.toast.classList.add('visible');}
   update(match,car,renderer,settings,dt){
     this.el['blue-score'].textContent=match.score[0];this.el['orange-score'].textContent=match.score[1];const seconds=match.overtime?Math.floor(match.time):Math.ceil(match.time);this.el.timer.textContent=(match.overtime?'+':'')+`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;
-    this.el['match-label'].textContent=match.overtime?'OVERTIME':settings.bot?'EXHIBITION':'FREE PLAY';this.el['timer'].classList.toggle('urgent',!match.overtime&&match.time<30);
+    this.el['match-label'].textContent=match.overtime?'OVERTIME':settings.bot?'EXHIBITION':'PRACTICE';this.el['timer'].classList.toggle('urgent',!match.overtime&&match.time<30);
     this.el['venue-mode'].textContent=settings.bot?'EXHIBITION · 1V1':'SOLO PRACTICE';
     this.el['boost-value'].textContent=settings.infinite?'∞':Math.ceil(car.boost);this.el['boost-ring'].style.strokeDashoffset=339.29*(1-car.boost/100);this.el['boost-ring'].classList.toggle('active',car.boosting);this.el['boost-mode'].textContent=settings.infinite?'UNLIMITED ON':'UNLIMITED OFF';this.el['infinite-button'].classList.toggle('enabled',settings.infinite);this.el['infinite-button'].setAttribute('aria-pressed',String(settings.infinite));
     this.el.speed.innerHTML=`${Math.round(car.speed*1.8)} <small>KM/H</small>`;this.el['camera-mode'].textContent=renderer.cameraMode==='ball'?'BALL CAM':'CAR CAM';this.el['camera-indicator'].classList.toggle('active',renderer.cameraMode==='ball');

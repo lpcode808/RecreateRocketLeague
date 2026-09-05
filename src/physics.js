@@ -129,11 +129,14 @@ export class Physics {
 export function botInput(car,ball,enabled=true){
   if(!enabled)return {throttle:0,steer:0,roll:0,boost:false,jump:false,jumpHeld:false};
   const pos=v3(car.body.translation()),bp=v3(ball.translation()),bv=v3(ball.linvel());
-  const predicted=bp.clone().addScaledVector(bv,.28),attack=new T.Vector3(0,0,F.z).sub(predicted).setY(0).normalize();
+  const predicted=bp.clone().addScaledVector(bv,.28),attack=new T.Vector3(0,0,car.team===0?-F.z:F.z).sub(predicted).setY(0).normalize();
   const target=predicted.clone().addScaledVector(attack,-6);
   // Approach from behind the ball; drive around it when returning from the wrong side.
   if(pos.clone().sub(bp).dot(attack)>1){const side=pos.x>bp.x?1:-1;target.x+=side*10;target.z-=4;}
   else if(pos.distanceTo(bp)<9)target.copy(predicted).addScaledVector(attack,3);
+  // A ball near the back wall used to put the approach point inside this bot's
+  // own net, where it could remain against the goal back wall indefinitely.
+  target.x=clamp(target.x,-F.x+4,F.x-4);target.z=clamp(target.z,-F.z+4,F.z-4);
   const local=target.sub(pos).applyQuaternion(new T.Quaternion().copy(car.body.rotation()).invert());
   const angle=Math.atan2(local.x,-local.z),distance=local.length();
   const upside=UP.clone().applyQuaternion(new T.Quaternion().copy(car.body.rotation())).y<-.2;

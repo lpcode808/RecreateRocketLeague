@@ -117,3 +117,19 @@ Work is on **`improve/car-and-handling`**, based on a freshly fetched, current `
 ### Publication approval · 2026-09-04
 
 Justin subsequently approved committing this continuation and pushing it to `main` before starting another task. The earlier uncommitted/no-push status describes the implementation exit, before this approval. The next task should resume from `main` after checking local/remote Git state; the remaining fidelity work above is unchanged.
+
+## Final pre-human-test exit · 2026-09-04
+
+Justin requested this as the last implementation pass before human testing. Work is on **`improve/human-test-ready`**, based on freshly fetched `main` at `17c7d2c`. This pass is **uncommitted and unpublished**. Include the new camera helper, camera/controls tests and human-test guide with all modified files in any later approved commit.
+
+**Changed:** Fixed Maverick's defensive own-net stall by bounding its approach target. Added rounded-corner and goal camera containment, preserving aerial altitude above goal roofs. Replaced horizontal vector interpolation with wrapped-angle heading interpolation to fix an exact-180° camera deadlock. Restored browser Tab navigation in the pause menu. Renamed the timed solo HUD label to PRACTICE. Added recessed goal tunnels, ribs, lights and end-bowl floodlights; removed cage geometry across the goal mouth, reduced cage opacity and batched static opaque architecture by material.
+
+**Verified:** 21/21 tests, production build and diff whitespace checks pass. Native pause-menu Tab/Shift-Tab/Space and B/C/R controls, High/Performance graphics, solo mode, 1440×900/1366×768 rendering, goal scoring and frozen corner/backboard camera scenarios were checked. A short rendered driving sample averaged 59.9 fps; an accelerated full match finished 0–31 with finite player positions. See `docs/VERIFICATION.md` for timing, evidence paths and limits. Independent reviewer found no blocker for human testing.
+
+**Next action is human play:** [docs/HUMAN-TEST.md](docs/HUMAN-TEST.md) gives a five-minute route and concise feedback prompts. Prioritize reproduced human handling/camera failures over another speculative fidelity pass. Original-game parity remains unmet, and close wall views can crop the lower car. No human match, competitive timing validation or cross-device test has been completed.
+
+**Role split:** Lead handled stadium, keyboard/menu fixes, integration, browser verification and documentation. Bounded implementation agents handled bot physics and camera constraints; a fresh-context reviewer judged the final candidate. Existing dark sports HUD/glow/type conventions remain intentional.
+
+### Merge and Pages approval · 2026-09-04
+
+Justin approved committing and merging this pass to `main` and asked about the newly enabled Pages deployment. The legacy main-root source cannot build Vite. Added a test/build/deploy GitHub Actions workflow and a CI-only `/RecreateRocketLeague/` asset base; local development remains at `/`. Pages is being switched to Actions before the approved push. The uncommitted status above describes the implementation exit before this approval; check Git and the workflow run for current publication state.

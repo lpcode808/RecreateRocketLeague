@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as T from 'three';
 import { Match, goalForBall } from '../src/match.js';
-import { Physics } from '../src/physics.js';
+import { Physics, botInput } from '../src/physics.js';
 import { FIELD, BALL_RADIUS, STEP, PAD_POSITIONS } from '../src/config.js';
 const neutral={throttle:0,steer:0,roll:0,jump:false,jumpHeld:false,boost:false};
 const physics=await new Physics().init();
@@ -47,6 +47,13 @@ test('ball receives a real car impact and rebounds off a side wall',()=>{
 });
 test('curved ramp transitions the car onto a vertical wall',()=>{
  physics.reset();const c=physics.cars[0];c.boost=100;c.body.setTranslation({x:72,y:.5,z:0},true);c.body.setRotation({x:0,y:-Math.SQRT1_2,z:0,w:Math.SQRT1_2},true);c.body.setLinvel({x:25,y:0,z:0},true);advance(1.5,{throttle:1,boost:true});assert.ok(c.body.translation().y>15);assert.ok(c.grounded);assert.ok(c.body.translation().x<FIELD.x);
+});
+test('bot does not park in its own net when the ball is deep in its half',()=>{
+ physics.reset();const bot=physics.cars[1];
+ physics.ball.setTranslation({x:0,y:BALL_RADIUS+.04,z:-92},true);physics.ball.setLinvel({x:0,y:0,z:0},true);
+ for(let i=0;i<Math.round(12/STEP);i++)physics.step([neutral,botInput(bot,physics.ball,true)],STEP,false);
+ assert.ok(bot.body.translation().z>-FIELD.z);
+ assert.ok(physics.ball.translation().z>-86);
 });
 test('omitted optional input fields never poison the physics world',()=>{
  physics.reset();for(let i=0;i<120;i++)physics.step([{},{}],STEP,false);for(const c of physics.cars)for(const v of Object.values(c.body.translation()))assert.ok(Number.isFinite(v));
