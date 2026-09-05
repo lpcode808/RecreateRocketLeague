@@ -3,6 +3,7 @@ import * as T from 'three';
 import { Physics, botInput } from './physics.js';
 import { Renderer } from './render.js';
 import { Controls } from './controls.js';
+import { TouchUI } from './touch.js';
 import { Match } from './match.js';
 import { UI } from './ui.js';
 import { AudioSystem } from './effects.js';
@@ -10,7 +11,8 @@ import { STEP, BLUE, ORANGE } from './config.js';
 async function boot(){
   const physics=await new Physics().init(),render=new Renderer(document.querySelector('#game')),match=new Match(),audio=new AudioSystem();
   const settings={infinite:false,bot:true,paused:false};let accumulator=0,last=performance.now(),finishedShown=false,pendingJump=false;
-  function pause(value){settings.paused=value;controls.clear();pendingJump=false;ui.paused(value,match.phase==='finished');accumulator=0;}
+  let touch;
+  function pause(value){if(!value&&touch?.portrait)return;settings.paused=value;controls.clear();pendingJump=false;ui.paused(value,match.phase==='finished');touch?.setPaused(value);accumulator=0;}
   function reset(){match.reset();physics.reset();render.snap(physics);render.pads.forEach(p=>p.cooldown=0);finishedShown=false;pause(false);}
   function action(name,value){
     if(name==='pause'){if(match.phase!=='finished')pause(!settings.paused);}
@@ -25,6 +27,8 @@ async function boot(){
     if(name==='quality')render.setQuality(value);
   }
   const ui=new UI(action),controls=new Controls(action);render.snap(physics);
+  touch=new TouchUI(controls,action);touch.setPaused(settings.paused);
+  if(touch.enabled){render.setQuality('performance');ui.el.quality.value='performance';pause(true);}
   document.addEventListener('pointerdown',()=>audio.start());document.addEventListener('keydown',()=>audio.start(),{once:true});
   function physicsEvent(type,data){
     if(type==='hit'){render.effects.burst(data.position,0xffe7ba,15,7);render.shake=Math.min(.2,data.speed*.008);audio.tone(80+Math.max(0,data.speed)*5,.12,.35,'triangle');}

@@ -133,3 +133,9 @@ Justin requested this as the last implementation pass before human testing. Work
 ### Merge and Pages approval · 2026-09-04
 
 Justin approved committing and merging this pass to `main` and asked about the newly enabled Pages deployment. The legacy main-root source cannot build Vite. Added a test/build/deploy GitHub Actions workflow and a CI-only `/RecreateRocketLeague/` asset base; local development remains at `/`. Pages is being switched to Actions before the approved push. The uncommitted status above describes the implementation exit before this approval; check Git and the workflow run for current publication state.
+
+## 2026-09-04 — landscape mobile input
+
+Added `src/touch.js` for pointer-captured analog stick and multi-touch boost/jump/drift/roll, with cancellation and blur cleanup. `Controls` merges separate touch and keyboard state into the existing physics input; no physics or camera tuning changed. Coarse-pointer devices get touch UI automatically; hybrid computers activate it after a touch. Portrait shows a rotation prompt and pauses; returning to landscape requires Resume. Initial touch devices start paused with Performance graphics. The HUD respects safe-area insets; touch help and Recover Car live in the scrollable pause menu. Existing sports palette/type are intentionally retained.
+
+Desktop keyboard bindings and default graphics remain unchanged. Quality switching also updates composer pixel ratio to avoid oversized mobile postprocessing targets. README and verification notes now describe touch support. 23 unit tests and build pass; isolated Chrome mobile-emulation/browser touch checks pass, with screenshots and harness under ignored `test-results/mobile-*`. Physical devices, Safari, thumb ergonomics and sustained mobile FPS remain unverified. Work is on `improve/mobile-controls`; no commit, merge, push or deployment performed in this pass.

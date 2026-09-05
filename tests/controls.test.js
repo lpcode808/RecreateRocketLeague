@@ -21,3 +21,19 @@ test('pause-menu Tab and Space retain browser defaults while gameplay jump stays
     listeners.get('blur')();assert.equal(controls.read().jumpHeld,false);
   }finally{delete globalThis.window;}
 });
+
+test('touch axes combine with keyboard; jump edges survive release and clear removes all held inputs',()=>{
+  globalThis.window={addEventListener:()=>{}};
+  try{
+    const controls=new Controls(()=>{});
+    controls.setTouch({throttle:.6,steer:-.5,boost:true,jumpHeld:true});
+    let input=controls.read();assert.equal(input.throttle,.6);assert.equal(input.steer,-.5);assert.equal(input.boost,true);assert.equal(input.jump,true);
+    assert.equal(controls.read().jump,false);
+    controls.setTouch({jumpHeld:false});controls.setTouch({jumpHeld:true});controls.setTouch({jumpHeld:false});
+    assert.equal(controls.read().jump,true);assert.equal(controls.read().jumpHeld,false);
+    controls.keys.add('KeyW');assert.equal(controls.read().throttle,1);
+    controls.clearTouch();assert.equal(controls.read().throttle,1);assert.equal(controls.read().boost,false);
+    controls.setTouch({roll:1,drift:true,jumpHeld:true});controls.clear();
+    assert.deepEqual(controls.read(),{throttle:0,steer:0,roll:0,boost:false,drift:false,jump:false,jumpHeld:false});
+  }finally{delete globalThis.window;}
+});

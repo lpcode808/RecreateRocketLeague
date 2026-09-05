@@ -31,7 +31,7 @@ export class Renderer{
     window.addEventListener('resize',()=>this.resize());this.time=0;this.frameCount=0;
   }
   resize(){this.camera.aspect=innerWidth/innerHeight;this.camera.updateProjectionMatrix();this.renderer.setSize(innerWidth,innerHeight);this.composer.setSize(innerWidth,innerHeight);}
-  setQuality(q){this.quality=q;this.renderer.setPixelRatio(q==='high'?Math.min(devicePixelRatio,1.5):1);this.bloom.enabled=q==='high';this.renderer.shadowMap.enabled=q==='high';this.resize();}
+  setQuality(q){this.quality=q;const ratio=q==='high'?Math.min(devicePixelRatio,1.5):1;this.renderer.setPixelRatio(ratio);this.composer.setPixelRatio(ratio);this.bloom.enabled=q==='high';this.renderer.shadowMap.enabled=q==='high';this.resize();}
   update(physics,dt,paused=false){
     this.time+=dt;this.frameCount++;
     for(let i=0;i<2;i++){

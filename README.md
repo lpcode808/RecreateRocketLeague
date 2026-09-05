@@ -30,6 +30,10 @@ Pages uses **GitHub Actions** as its source. `.github/workflows/pages.yml` tests
 
 ## Controls
 
+**Phone / tablet:** rotate to landscape. The match starts paused, with Performance graphics selected. Drag the left stick up/down to drive/reverse and sideways to steer; in the air it controls pitch/yaw. Hold BOOST, hold JUMP for height, then release and tap JUMP again for a second jump or directional flip. DRIFT and ROLL buttons handle powerslides and air roll. Camera and unlimited boost are tappable; the pause menu includes Recover Car and full instructions. Turning upright or leaving the page pauses play and clears held input. Return to landscape and tap Resume.
+
+**Desktop:** keyboard bindings and High graphics default are preserved. Touch controls appear for coarse-pointer devices, or when a touch is detected on a hybrid computer.
+
 | Key | Action |
 | --- | --- |
 | WASD / arrows | Drive and steer; pitch and yaw while airborne |
@@ -65,7 +69,7 @@ This is a procedural recreation, **not a visually identical copy or a physics-eq
 
 The world uses 50 source game units per scene unit. Gravity, speed caps, jump impulse, boost use and arena proportions are modeled on the original's conventions; the suspension solver, tire grip, collision assistance, dodge behavior, camera and bot are custom implementations. Advanced mechanics are present, but exact flip-cancel timing, reset contact margins, tackling/demolition rules and competitive aerial feel have not been matched against instrumented original-game recordings.
 
-Keyboard play is required. The layout resizes on narrow screens, but touch controls, gamepads, multiplayer, replays and car customization are not included. Fonts load from Google Fonts, with local fallbacks when offline. Graphics require WebGL2.
+Keyboard and landscape touch play are supported. Touch behavior has been checked in Chrome mobile emulation; real-phone ergonomics, Safari behavior and sustained mobile performance still need device testing. Gamepads, multiplayer, replays and car customization are not included. Fonts load from Google Fonts, with local fallbacks when offline. Graphics require WebGL2.
 
 ## Source layout
 

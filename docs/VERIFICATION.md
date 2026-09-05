@@ -73,3 +73,12 @@ New ignored evidence: `continuation-baseline-front.png`, `continuation-car-front
 - Independent final reviewer reported **no blocker for human playtesting** after the camera repairs. This does not establish original-game visual/physics parity, human handling quality, bot difficulty, cross-browser support or competitive mechanic fidelity.
 
 New local ignored evidence: `preflight-gameplay-1440.png`, `preflight-gameplay-1366.png`, `preflight-goal-detail.png`, `preflight-backboard-final.png`, `preflight-corner-final.png`, and `preflight-match.json` in `test-results/`. `preflight.html`/`preflight.js` are local scenario controls and are not production entry points. Human test instructions are tracked source in [HUMAN-TEST.md](HUMAN-TEST.md).
+
+## Landscape touch controls — 2026-09-04
+
+This pass supersedes the older keyboard-only limitation above. Added an analog driving stick, simultaneous hold controls for boost/jump/drift/air roll, landscape guidance, safe-area-aware HUD and scrollable touch instructions/recovery. Desktop uses the same keyboard bindings and High graphics default; initial touch devices use Performance. The composer now follows the selected pixel ratio as well as the renderer.
+
+- 23 Node tests pass, including analog dead zone/bounds, keyboard/touch composition, jump edges and reset clearing; production build passes.
+- Isolated installed Chrome with mobile emulation exercised simultaneous stick/boost/jump through browser touch events, selective jump release, pointer cancellation, portrait pause and frozen match clock, landscape return with deliberate resume, and desktop B/P/Space controls. No page errors were reported.
+- Inspected rendered screenshots at 844×390, 667×375, 568×320, 1024×768 and portrait 390×844; desktop regression capture at 1440×900. Local ignored evidence and repeatable browser harness: `test-results/mobile-*.png`, `test-results/mobile-qa.mjs`.
+- Not verified: physical multi-thumb comfort, iOS Safari/Android browser behavior, display-cutout hardware or sustained phone FPS. Browser emulation is not real-device validation. Existing Rapier initialization and large-bundle warnings remain.
