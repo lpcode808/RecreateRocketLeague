@@ -4,6 +4,8 @@ A playable Three.js / Rapier browser game. It opens directly on the pitch, with 
 
 **Continuing development? Read [HANDOFF.md](HANDOFF.md)** for the current baseline, next priorities, known limitations and regression notes.
 
+**Curious how this was built?** [How It Was Built](public/how-it-was-built/index.html) is a plain-language, timestamped play-by-play of the AI agent sessions that produced this game in one evening, retold from the session logs for non-technical readers. It ships with the game at `/how-it-was-built/` on the Pages site.
+
 **Ready to playtest:** follow the [five-minute human test](docs/HUMAN-TEST.md). The latest pass fixes a defensive bot stall, pause-menu Tab navigation and camera containment, and adds recessed goal tunnels and end-bowl floodlights.
 
 ## Run

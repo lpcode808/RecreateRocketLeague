@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How It Was Built · Champions Field</title>
+<meta name="description" content="A plain-language, timestamped play-by-play of how an AI coding agent built this Rocket League recreation in one evening, retold from the session logs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #f7f5f0;
+    --ink: #1c1b18;
+    --muted: #6b6760;
+    --rule: #e2ded5;
+    --tint: #efece5;
+    --orange: #c45d14;
+    --blue: #2b5fa8;
+    --measure: 70ch;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #15171c;
+      --ink: #ece9e2;
+      --muted: #9b978f;
+      --rule: #2b2f37;
+      --tint: #1d2027;
+      --orange: #e8823a;
+      --blue: #7fa6e6;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body {
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: var(--measure); margin: 0 auto; padding: 0 clamp(1rem, 4vw, 2.5rem); }
+  h1, h2, h3, h4, .ui { font-family: 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif; line-height: 1.2; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.75rem); font-weight: 700; margin: 0.25rem 0 1rem; max-width: 26ch; }
+  h2 { font-size: 1.45rem; font-weight: 600; margin: 3.5rem 0 1rem; }
+  h3 { font-size: 1.1rem; font-weight: 600; margin: 2rem 0 0.5rem; }
+  p { margin: 0 0 1rem; }
+  a { color: var(--orange); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+  a:hover { text-decoration-thickness: 2px; }
+  code, .mono { font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em; }
+  code { background: var(--tint); padding: 0.05em 0.35em; border-radius: 3px; }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 3rem 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 0.9rem; }
+
+  /* masthead */
+  header.mast { padding: 3rem 0 1.5rem; }
+  .kicker { font-family: 'Sora', system-ui, sans-serif; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .kicker a { color: inherit; text-decoration: none; }
+  .kicker a:hover { text-decoration: underline; }
+  .dek { font-size: 1.2rem; line-height: 1.5; max-width: 60ch; }
+  .dek strong { font-weight: 600; }
+
+  /* box score */
+  .score { border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); margin: 2rem 0 0; }
+  .score table { width: 100%; border-collapse: collapse; font-family: 'Sora', system-ui, sans-serif; font-size: 0.95rem; }
+  .score th, .score td { text-align: left; padding: 0.7rem 0.5rem 0.7rem 0; vertical-align: top; border-bottom: 1px solid var(--rule); }
+  .score tr:last-child th, .score tr:last-child td { border-bottom: 0; }
+  .score th { font-weight: 500; color: var(--muted); width: 38%; }
+  .score td { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .score td .note { display: block; font-family: 'Source Serif 4', Georgia, serif; font-weight: 400; color: var(--muted); font-size: 0.9rem; margin-top: 0.15rem; }
+  .score caption { text-align: left; font-family: 'Sora', system-ui, sans-serif; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0.6rem 0 0.4rem; }
+
+  /* roster */
+  .roster { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; grid-template-columns: 1fr; gap: 0.15rem; }
+  .roster li { display: grid; grid-template-columns: 9.5rem 1fr; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--rule); }
+  .roster li:last-child { border-bottom: 0; }
+  .roster .who { font-family: 'Sora', system-ui, sans-serif; font-weight: 600; font-size: 0.95rem; }
+  .roster .who span { display: block; font-weight: 400; color: var(--muted); font-size: 0.8rem; margin-top: 0.15rem; }
+  .roster .who.team-blue { color: var(--blue); }
+  .roster .who.team-orange { color: var(--orange); }
+  @media (max-width: 560px) { .roster li { grid-template-columns: 1fr; gap: 0.25rem; } }
+
+  /* decoder */
+  .decoder { columns: 2; column-gap: 2.5rem; margin: 0; padding: 0; }
+  .decoder dt { font-family: 'Sora', system-ui, sans-serif; font-weight: 600; font-size: 0.95rem; break-after: avoid; }
+  .decoder dd { margin: 0 0 0.9rem; font-size: 0.97rem; break-inside: avoid; }
+  @media (max-width: 640px) { .decoder { columns: 1; } }
+
+  /* filter */
+  .filter { position: sticky; top: 0; z-index: 5; background: var(--paper); padding: 0.75rem 0; margin: 2rem 0 0.5rem; border-bottom: 1px solid var(--rule); }
+  .filter fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+  .filter legend { font-family: 'Sora', system-ui, sans-serif; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); float: left; margin-right: 0.75rem; padding: 0.35rem 0; }
+  .filter label { font-family: 'Sora', system-ui, sans-serif; font-size: 0.85rem; font-weight: 500; padding: 0.3rem 0.7rem; border: 1px solid var(--rule); border-radius: 999px; cursor: pointer; user-select: none; }
+  .filter label:has(input:checked) { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .filter label:has(input:focus-visible) { outline: 2px solid var(--orange); outline-offset: 2px; }
+  .filter input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .filter .count { margin-left: auto; font-family: 'Sora', system-ui, sans-serif; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* periods and beats */
+  .period { margin-top: 3rem; }
+  .period-head { display: grid; grid-template-columns: 5.5rem 1fr; gap: 1rem; align-items: baseline; border-top: 2px solid var(--ink); padding-top: 1rem; }
+  .period-head .num { font-family: 'Sora', system-ui, sans-serif; font-weight: 700; font-size: 2rem; line-height: 1; color: var(--muted); }
+  .period-head h2 { margin: 0; }
+  .period-head .range { font-family: 'Sora', system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-top: 0.3rem; font-variant-numeric: tabular-nums; }
+  .period-lede { margin: 1rem 0 1.5rem; grid-column: 2; }
+  @media (min-width: 600px) { .period-lede { margin-left: 6.5rem; } }
+
+  .beats { list-style: none; margin: 0; padding: 0; }
+  .beat { display: grid; grid-template-columns: 5.5rem 1fr; gap: 1rem; padding: 0.7rem 0; border-bottom: 1px solid var(--rule); }
+  .beat:last-child { border-bottom: 0; }
+  .beat time { font-family: 'Sora', system-ui, sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; padding-top: 0.25rem; }
+  .beat .body { min-width: 0; }
+  .beat .body p { margin: 0 0 0.4rem; }
+  .beat .body p:last-child { margin-bottom: 0; }
+  .beat .tag { font-family: 'Sora', system-ui, sans-serif; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 0.5rem; }
+  .beat[data-tags~="blocked"] .tag { color: var(--orange); }
+  .beat[data-tags~="blocked"] time { color: var(--orange); }
+  .beat.hide { display: none; }
+  @media (max-width: 560px) {
+    .beat, .period-head { grid-template-columns: 1fr; gap: 0.2rem; }
+    .period-head .num { font-size: 1.4rem; }
+  }
+
+  /* Justin's messages */
+  .said { margin: 0; padding: 0.15rem 0 0.15rem 0; }
+  .said .from { font-family: 'Sora', system-ui, sans-serif; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue); display: block; margin-bottom: 0.15rem; }
+  .said q, .said p { font-style: italic; quotes: "“" "”"; }
+  .said p { margin: 0; }
+  .agent-said { color: var(--ink); }
+  .agent-said .from { color: var(--orange); }
+
+  /* figures */
+  figure { margin: 1.25rem 0; }
+  figure img { display: block; width: 100%; height: auto; border-radius: 3px; border: 1px solid var(--rule); background: #000; }
+  figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.5; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .pair figure { margin: 0; }
+  .pair figcaption { margin-top: 0.4rem; }
+  .pairwrap { margin: 1.25rem 0; }
+  .pairwrap > figcaption { margin-top: 0.6rem; }
+  @media (max-width: 560px) { .pair { grid-template-columns: 1fr; } }
+
+  /* lists */
+  .notice { padding-left: 1.2rem; margin: 0; }
+  .notice li { margin-bottom: 0.85rem; }
+  .notice li b { font-family: 'Sora', system-ui, sans-serif; font-weight: 600; font-size: 0.95rem; }
+
+  footer { margin: 4rem 0 3rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); font-size: 0.92rem; color: var(--muted); }
+  footer p { margin-bottom: 0.6rem; }
+
+  @media print {
+    body { background: white; color: black; font-size: 10.5pt; }
+    .filter { display: none; }
+    .beat.hide { display: grid; }
+    a { color: black; }
+    figure, .beat { break-inside: avoid; }
+    @page { margin: 0.8in; size: letter; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .filter label { transition: background-color 120ms ease, color 120ms ease; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <p class="kicker"><a href="../">Champions Field</a> · the build log, retold</p>
+  <h1>An AI built this game in one evening. Here is the play-by-play.</h1>
+  <p class="dek">On September 4, 2026, a teacher in Honolulu pasted an 800-word wish list into an AI coding tool at 5:29 pm. By 9:56 pm a playable rocket-car soccer game was live on the web, with touch controls for phone-sized screens (tested in an emulator; no real phone yet). The human typed <strong>nine messages</strong> the whole evening. This page walks through what the AI actually did in between, minute by minute, for readers who have never written a line of code.</p>
+  <p class="dek muted">The code itself is a rough recreation, and it says so about itself. What makes the evening worth studying is the speed, and the habits the AI kept while going fast: reading the rules first, checking its own work with screenshots, asking a second AI to find problems, and stopping to ask before publishing.</p>
+</header>
+
+<section class="score" aria-labelledby="score-cap">
+  <table>
+    <caption id="score-cap">Box score</caption>
+    <tr><th>Clock</th><td>5:29 pm → 9:56 pm<span class="note">About 4½ hours on the wall. The AI was actively working for roughly 1 hour 35 minutes of that. The rest was Justin reading, playing, or away.</span></td></tr>
+    <tr><th>Human messages</th><td>9<span class="note">One long brief, then eight short notes totaling about 140 words. Three of them were "commit and push" in some spelling.</span></td></tr>
+    <tr><th>AI agents involved</th><td>1 lead + 7 helpers + 1 referee<span class="note">The lead ran on a model called gpt-6-astra. Helpers were spun up for physics, camera, and independent review. A separate safety model judged every risky action.</span></td></tr>
+    <tr><th>Saves to the shared repository</th><td>4 commits<span class="note">About 2,200 lines of code and documentation across 18 source and test files.</span></td></tr>
+    <tr><th>Automated tests</th><td>0 → 23<span class="note">Started with a test command that pointed at an empty folder and reported success. Ended with 23 real physics and rules checks.</span></td></tr>
+    <tr><th>Safety checks</th><td>105 judged · 102 allowed · 3 denied<span class="note">All three denials were about publishing to the public internet before the human had clearly said yes.</span></td></tr>
+    <tr><th>Reading and writing</th><td>≈ 42 million tokens read · ≈ 200,000 written<span class="note">A token is about three-quarters of a word. Most of the reading was the AI re-reading the same project files on every turn; over 90% were cached repeats.</span></td></tr>
+  </table>
+</section>
+
+<h2 id="roster">Who was on the field</h2>
+<p>AI coding tools now work as small teams. In these logs each helper got a random human first name, which makes the transcript read like an office. The names are labels, nothing more.</p>
+<ul class="roster">
+  <li><div class="who team-blue">Justin<span>the human</span></div><div>A teacher who runs a lot of these tools. He wrote the brief, checked in a few times, said yes or no to publishing, and otherwise stayed out of the way.</div></li>
+  <li><div class="who team-orange">Astra<span>lead agent · gpt-6-astra</span></div><div>Read the brief and the house rules, wrote nearly all the code, ran the game in a real browser, took screenshots, decided what to fix next, and wrote the reports. When the work split, Astra handed pieces to helpers and reviewed what came back.</div></li>
+  <li><div class="who">Pam, Jim, Darryl<span>implementers · gpt-5.6-terra</span></div><div>Short-lived helpers given one bounded job each: fix a physics defect, fix the bot, fix the camera. They shared the same folder as Astra, so their edits appeared instantly.</div></li>
+  <li><div class="who">Oscar, Dwight<span>reviewers · gpt-5.5</span></div><div>Fresh-context reviewers on a different model. They never saw Astra's reasoning. Their whole job was to read the code, poke at the physics, look at the screenshots, and report problems. They found real ones.</div></li>
+  <li><div class="who">The Guardian<span>safety referee · codex-auto-review</span></div><div>An automatic model that judged each risky action before it ran: installing software, starting servers, writing shared files, publishing. It rated risk and checked whether the human had actually authorized it. It said yes 102 times and no 3 times.</div></li>
+</ul>
+
+<h3 id="decoder">Decoder</h3>
+<p class="small muted">A few words that come up constantly below.</p>
+<dl class="decoder">
+  <dt>Repository (repo)</dt><dd>The project's folder, with a full history of every change. This one lives on GitHub, a website for hosting code.</dd>
+  <dt>Commit</dt><dd>A saved snapshot of the code with a short label. Nothing leaves the laptop until it is also <em>pushed</em>.</dd>
+  <dt>Push</dt><dd>Uploading commits to GitHub so they are public. In this project, pushing also republishes the live game.</dd>
+  <dt>Branch</dt><dd>A side copy of the code for trying things out. Merging brings it back into the main line.</dd>
+  <dt>Dev server</dt><dd>A tiny local web server so the game can be opened in a browser at an address like 127.0.0.1:5173. Only visible on the one machine.</dd>
+  <dt>Test</dt><dd>A small program that checks one rule automatically, such as "a ball fully across the goal line scores once." Green means pass.</dd>
+  <dt>Physics engine</dt><dd>A library (here, Rapier) that handles gravity, bouncing, and collisions so the game does not have to invent them.</dd>
+  <dt>Three.js</dt><dd>A library for drawing 3D scenes in a web browser.</dd>
+  <dt>Subagent</dt><dd>A second AI started by the first one to do a piece of the work, then report back.</dd>
+  <dt>GitHub Pages</dt><dd>GitHub's free hosting: it turns a repository into a public website. Here it republishes the game on every push.</dd>
+  <dt>Token</dt><dd>The unit AI models read and write in, about three-quarters of a word.</dd>
+</dl>
+
+<div class="filter" role="region" aria-label="Filter the play-by-play">
+  <fieldset>
+    <legend>Show</legend>
+    <label><input type="radio" name="f" value="all" checked> Everything</label>
+    <label><input type="radio" name="f" value="human"> Conversation with Justin</label>
+    <label><input type="radio" name="f" value="bug"> Bugs and fixes</label>
+    <label><input type="radio" name="f" value="look"> Screenshots and checks</label>
+    <label><input type="radio" name="f" value="review"> Second opinions</label>
+    <label><input type="radio" name="f" value="gate"> Safety gates</label>
+    <span class="count" id="count"></span>
+  </fieldset>
+</div>
+
+<!-- ============================ PERIOD 1 ============================ -->
+<section class="period" id="p1">
+  <div class="period-head">
+    <div class="num">1</div>
+    <div>
+      <h2>From an empty folder to a playable game</h2>
+      <div class="range">5:29 pm – 6:59 pm · about 46 minutes of agent work, plus a 43-minute wait for a yes</div>
+    </div>
+  </div>
+  <p class="period-lede">Astra reads the rules, checks the software it is about to install, writes the whole game in about fifteen minutes, then spends half an hour in a loop: run it, screenshot it, fix what looks wrong, run the tests, repeat. A second AI grades the work twice. Meanwhile, in another window, a second thread sets up GitHub and gets into a polite standoff about who is allowed to press publish.</p>
+
+  <ol class="beats">
+    <li class="beat" data-tags="human"><time>5:29</time><div class="body">
+      <p class="said"><span class="from">Justin · the brief</span><q>Build a polished browser-based 3D Rocket League-style game using Three.js. Goal: Create a fully playable local web game that runs in the browser. The first screen should be the actual game, not a landing page.</q></p>
+      <p class="small muted">About 800 words follow: a physics engine, boost pads, jumps and flips, a chase camera, a beatable bot, a match timer, and "make it feel like an arcade sports game people would actually want to play for five minutes." A second paragraph raises the bar to "nearly identical to the original," adds a B key for infinite boost, and ends: <q>You have as many tokens as you want to complete this task. I'm not in a rush at all.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags=""><time>5:29</time><div class="body">
+      <p><span class="tag">Reads first</span>Before writing anything, Astra reads the household rules for this collection of projects (two instruction files that cover voice, safety, and design taste), the shared work log, and looks for any prior notes on this game. There are none. The folder is empty.</p>
+      <p>It also does a web search for reference photos of Rocket League's Champions Field stadium and the Octane car, so it is building toward a real target rather than memory.</p>
+    </div></li>
+
+    <li class="beat" data-tags=""><time>5:29</time><div class="body">
+      <p class="said agent-said"><span class="from">Astra</span><q>Exact parity with Rocket League's proprietary assets and physics needs more than visual resemblance, so I'll keep those differences explicit as I iterate.</q></p>
+      <p class="small muted">This caveat shows up in every report for the rest of the night. It never claims the game looks identical.</p>
+    </div></li>
+
+    <li class="beat" data-tags="gate look"><time>5:30</time><div class="body">
+      <p><span class="tag">Supply-chain check</span>Astra is about to install three libraries: Three.js, the Rapier physics engine, and Vite (the dev server). A house rule says never install a package published in the last 48 hours, because freshly published packages are how malware sneaks in. So it checks each one's publish date first. Each check needs a permission escalation, and the Guardian allows each as a routine public lookup.</p>
+    </div></li>
+
+    <li class="beat" data-tags=""><time>5:31 – 5:44</time><div class="body">
+      <p><span class="tag">Writes the game</span>In about fifteen minutes Astra writes the core files: the stadium (three seating tiers, banners, floodlights, a hand-drawn turf texture, 34 boost pads), the physics (gravity, a car body held up by four "suspension rays," a ball), the effects (particles for boost trails and goal explosions), and the on-screen display. At 5:44 it reports: <q>playable loop is assembled: Rapier car and ball physics, jumps and flips, boost pickup and drain, a bot, scoring, kickoff resets, overtime, camera modes, and sound.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="look gate"><time>5:44</time><div class="body">
+      <p><span class="tag">Runs it</span>Starts the dev server and opens the game in a real browser it can control. A security audit of the installed packages flags the Vite version. Astra checks the release date of the fixed version, confirms it is old enough, and upgrades. Guardian: medium risk, allowed, because it fixes a real audit finding.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>5:45</time><div class="body">
+      <p><span class="tag">First screenshot</span>Astra takes a picture of the running game and, importantly, opens the picture and looks at it. The turf is washed out. The stands are thin. The car is tiny.</p>
+      <figure><img src="img/rocket-first-pass.jpg" alt="First render: a pale mint-green pitch, a small blue buggy, and sparse grey stadium tiers with Champions Field banners under a bright sky." width="1000" height="625" loading="lazy"><figcaption>5:45 pm. The very first frame. Everything is there in outline, and nothing looks right yet.</figcaption></figure>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>5:46</time><div class="body">
+      <p><span class="tag">Second opinion</span>Astra spins up Oscar, a reviewer on a different model with no memory of the work so far. Oscar's instructions to itself: do not edit anything, do not drive the browser, just audit the code and the screenshots and report problems.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug"><time>5:47</time><div class="body">
+      <p><span class="tag">Crash</span>A scripted physics test (rest, drive, turn, boost, jump, flip) dies inside the physics engine with a low-level error. Cause: when the bot is switched off, some of its control inputs are left blank, and blanks reached the engine. Fix: give every input a safe default. Astra also fixes the lighting that washed out the turf.</p>
+      <p class="said agent-said"><span class="from">Astra</span><q>The first browser pass caught two real issues: the lighting washed out the turf, and an incomplete "bot disabled" input could send invalid values into Rapier. Both are fixed.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>5:48</time><div class="body">
+      <p><span class="tag">Screenshot</span>Second capture, now at night under floodlights with a kickoff "GO!" on screen.</p>
+      <figure><img src="img/iteration-02.jpg" alt="Second render: night lighting, blue car at kickoff facing a distant goal, GO! text in the center, stadium tiers with hexagonal cage pattern." width="1000" height="625" loading="lazy"><figcaption>5:48 pm. Three minutes later. Darker sky, real shadows, a scoreboard.</figcaption></figure>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>5:49</time><div class="body">
+      <p><span class="tag">Measures</span>Holds the W and Shift keys for two seconds through the browser and counts frames: about 56 frames per second at a laptop resolution. (Sixty is smooth; below thirty feels choppy.) Saves another screenshot and looks at it.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>5:51</time><div class="body">
+      <p><span class="tag">Ground truth</span>Opens a second browser tab and navigates to the official Champions Field promotional image from the game's publisher, screenshots it, and looks at it beside its own build. (That image is not reproduced here; it belongs to Psyonix and Epic Games.)</p>
+    </div></li>
+
+    <li class="beat" data-tags="review bug"><time>5:51</time><div class="body">
+      <p><span class="tag">Oscar's first verdict</span><q>Playable shell, not yet at the requested Rocket League bar.</q> Six findings. The sharpest: the test command pointed at a folder that did not exist, so "run the tests" printed zero tests and reported success. A false green light. Also: the bot is <q>a chase heuristic, not a credible opponent</q>, the flip-reset mechanic is fragile, and wall driving works by accident rather than design.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>5:52</time><div class="body">
+      <p><span class="tag">Crowd</span>Rebuilds the crowd: 15,000 box-shaped seats become 24,000 sphere-shaped ones in more colors, with curved corner stands. Pins another library version to clear a second security advisory.</p>
+      <figure><img src="img/iteration-04-stadium.jpg" alt="Wide car-cam view down the pitch: denser, more colorful stadium seating on both sides, a trophy on a raised plinth beyond the far goal, floodlit night sky." width="1000" height="625" loading="lazy"><figcaption>5:52 pm. The rebuilt crowd and the trophy beyond the far goal, seen from behind the car.</figcaption></figure>
+    </div></li>
+
+    <li class="beat" data-tags="human gate"><time>5:51 – 5:54</time><div class="body">
+      <p><span class="tag">Meanwhile, the other window</span>At 5:51 Justin had opened a <em>second</em> conversation and typed:</p>
+      <p class="said"><span class="from">Justin · second thread</span><q>work in parallel with the other thread to setup the github, which the repo is already on my lpcode808 account.</q></p>
+      <p>That thread (on a different model, gpt-5.6-terra) checked GitHub in a browser, found the repository existed and was empty, and tried to initialize the local project folder for version control. First try failed with "Operation not permitted": the sandbox blocks that kind of write by default. It retried with a permission request and a stated reason, and succeeded. Then it messaged the build thread: <q>Please don't run git init/commit/push; tell me when your build is stable.</q> Astra replied: hold off, nine tests pass so far, still fixing things, and please keep the screenshots out of the public repository.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug"><time>5:54 – 5:58</time><div class="body">
+      <p><span class="tag">Tests grow</span>A real tests folder now exists. Checks accumulate: a ball must be fully across the line to score; a goal counts once and freezes the clock; tied games go to overtime; all 34 boost pads are placed; touching the ball with all four wheels restores a flip; jumping rights an overturned car. Eleven tests by 5:57. Along the way, a bug where a car could re-earn a flip reset over and over from one touch gets a fix.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug look"><time>5:56</time><div class="body">
+      <p><span class="tag">The hollow car</span>A close-up screenshot shows the hood and cockpit rendering dark, as if hollow. The 3D triangles of the body were facing inward, so the renderer skipped them. Rather than hand-edit every point, Astra writes a tiny script that reverses the winding order of the whole shape.</p>
+      <div class="pairwrap">
+        <div class="pair">
+          <figure><img src="img/car-detail.jpg" alt="Close-up of the blue buggy with a dark, see-through hood and cockpit area." width="1000" height="625" loading="lazy"><figcaption>Before: the hood reads as a hole.</figcaption></figure>
+          <figure><img src="img/car-detail-fixed.jpg" alt="Same close-up with a solid, glossy blue hood and racing stripes." width="1000" height="625" loading="lazy"><figcaption>After: painted shell, same camera.</figcaption></figure>
+        </div>
+        <figcaption>5:56 pm. No amount of reading the code would have shown this. Looking at the picture did.</figcaption>
+      </div>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>5:58</time><div class="body">
+      <p><span class="tag">Asks for a regrade</span>Sends Oscar a follow-up: look again at the newer build.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>5:59 – 6:01</time><div class="body">
+      <p><span class="tag">Stress tests</span>Runs two minutes of simulated driving, jumping, and wall riding at accelerated speed and confirms the car's position never becomes a non-number. Runs a 60-second bot-versus-nobody match: the bot moves the ball and scores. Stages a goal on purpose to photograph the celebration. Checks three window sizes, including a phone-shaped one, for anything spilling off screen.</p>
+      <figure><img src="img/goal-celebration.jpg" alt="YOU SCORED! text over an orange goal frame with a burst of blue particles, score 1 to 0." width="1000" height="625" loading="lazy"><figcaption>6:01 pm. A staged goal: Astra placed the ball and gave it a shove toward the net so it could see the celebration.</figcaption></figure>
+    </div></li>
+
+    <li class="beat" data-tags="review bug"><time>6:02</time><div class="body">
+      <p><span class="tag">Oscar's second verdict</span><q>Much improved.</q> Then two bugs it proved with numbers rather than opinions. First, holding boost quietly corrupted air control: the same variable fed both forward speed and the flip direction, so a neutral double-jump with boost held became an unwanted forward flip. Oscar ran the physics both ways and showed the flip timer reading 0.64 seconds with boost versus zero without. Second, the car's invisible collision box sat noticeably lower than the visible body, so the whole upper cab was not really "there."</p>
+      <p>Two smaller items: the Space key was swallowed even when a pause-menu button had focus, and the "GO!" text only appeared at the first kickoff.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug look"><time>6:03 – 6:04</time><div class="body">
+      <p><span class="tag">Fixes with sources</span>Astra looks up the Octane's real collision box in RocketSim, an open-source project that reverse-engineered the original game's physics, and applies the exact dimensions and offsets, with a code comment crediting where they came from. Separates the drive throttle from the aerial input so boost can no longer bend a flip. Adds a regression test so the bug cannot return unnoticed.</p>
+      <p class="said agent-said"><span class="from">Astra</span><q>The independent review caught a control bug worth fixing: boost was also forcing forward pitch in the air and turning neutral double jumps into flips.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="gate"><time>6:06 – 6:07</time><div class="body">
+      <p><span class="tag">Are we stable?</span>The GitHub thread, having waited and polled for about twelve minutes, asks the build thread directly: <q>Is the working tree now stable for me to commit and push? Please reply yes/no only.</q> Astra answers <q>No.</q> It is still tuning the boost trails and writing the README.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>6:07</time><div class="body">
+      <p><span class="tag">Final sample</span>Production build succeeds. A last driving sample measures about 53 frames per second, down from 56 earlier. Astra attributes the drop to the denser crowd and the new trail effects, and reports both numbers instead of only the better one.</p>
+      <figure><img src="img/final-gameplay.jpg" alt="Night stadium, blue car with two bright boost ribbons trailing behind, a large soccer ball ahead labeled MAVERICK, boost meter showing infinity." width="1000" height="625" loading="lazy"><figcaption>6:07 pm. End of the first build. Infinite boost is on (the ∞ in the corner), the bot is named Maverick, and the trophy sits above the far goal.</figcaption></figure>
+    </div></li>
+
+    <li class="beat" data-tags="gate blocked"><time>6:08</time><div class="body">
+      <p><span class="tag">Blocked</span>Astra now tells the GitHub thread "Yes," meaning go ahead and publish. <strong>The Guardian refuses to let that message send.</strong> Its reasoning: <q>the trusted transcript contains no explicit user approval for that external publication or its exact payload.</q> Justin had asked for a game. He had not yet said "put it on the public internet." Astra was about to authorize itself.</p>
+      <p>Astra takes the correction. It tells the other thread not to treat anything it has said as permission to publish, and records the block in the shared work log.</p>
+    </div></li>
+
+    <li class="beat" data-tags="human"><time>6:10</time><div class="body">
+      <p><span class="tag">Report</span>Astra's first report to Justin lists the controls, the numbers (13 tests, a clean build, no console errors, about 53 fps) and the caveat: <q>Visuals and advanced physics remain approximations; the indistinguishable-original quality bar wasn't achieved.</q> It ends with a question: <q>May the GitHub setup task publish the source, lockfile, tests, and documentation to your public repository?</q></p>
+      <p class="small muted">Then nothing happens for 43 minutes. Justin is presumably playing it.</p>
+    </div></li>
+
+    <li class="beat" data-tags="human"><time>6:53</time><div class="body">
+      <p class="said"><span class="from">Justin</span><q>Yes approve and make handoff doc for fresh agent to continue</q></p>
+    </div></li>
+
+    <li class="beat" data-tags=""><time>6:54 – 6:56</time><div class="body">
+      <p><span class="tag">Handoff note</span>Astra writes a long document for whichever AI picks this up next, with no memory of tonight: how the code is organized, what was verified and how, what is still an approximation, a list titled "Bugs already fixed, avoid regressions," the five most valuable next steps, and a ready-to-paste starting prompt. Then it relays Justin's approval to the GitHub thread.</p>
+    </div></li>
+
+    <li class="beat" data-tags="gate blocked"><time>6:57</time><div class="body">
+      <p><span class="tag">Blocked twice more</span>The GitHub thread finally tries to commit and push. Its own Guardian denies it: the approval exists, but it was typed into the <em>other</em> conversation, so this thread cannot prove it. The GitHub thread then tries asking the build thread to do the push instead. Denied again, this time as <q>an indirect workaround for the prior safety denial.</q></p>
+      <p>Astra sees no commit has landed and settles it: <q>Stop Git mutations; I will perform the approved commit/push from this task, where the explicit user authorization is present.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="gate"><time>6:58 – 6:59</time><div class="body">
+      <p><span class="tag">Published</span>Astra commits 22 files (about 1,645 lines) and pushes them. The Guardian rates the push high risk and allows it, quoting Justin's approval. Astra verifies the commit is really on GitHub, tells the other thread it is done, and reports: <q>Published to GitHub in commit 6c23592. Remote verified; working tree is clean.</q> ("Working tree is clean" means every local change has been saved and uploaded; nothing is left dangling.)</p>
+    </div></li>
+  </ol>
+</section>
+
+<!-- ============================ PERIOD 2 ============================ -->
+<section class="period" id="p2">
+  <div class="period-head">
+    <div class="num">2</div>
+    <div>
+      <h2>Making the car less toy-like</h2>
+      <div class="range">8:55 pm – 9:16 pm · about 20 minutes</div>
+    </div>
+  </div>
+  <p class="period-lede">Two hours later Justin starts a fresh conversation with an eleven-word instruction. This time Astra splits the work: a helper takes the physics defects while Astra reshapes the car. The helper's first fix turns out to be wrong, and it is the open-source reference code that catches it.</p>
+
+  <ol class="beats">
+    <li class="beat" data-tags="human"><time>8:55</time><div class="body">
+      <p class="said"><span class="from">Justin</span><q>continue the work in HANDOFF.md and deploy subagents as you need</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>8:55 – 8:56</time><div class="body">
+      <p><span class="tag">Re-orients</span>Astra reads its own handoff note, the README, and the reference and verification documents. It picks the two open priorities the note named: handling defects and the car's shape.</p>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>8:56</time><div class="body">
+      <p><span class="tag">Delegates</span>Spins up Pam, an implementer on gpt-5.6-terra, to find and fix real controller defects using the existing tests as the standard. Astra keeps the car visuals for itself, creates a side branch, and starts the dev server (the first attempt fails with a permissions error; the retry works).</p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>8:57</time><div class="body">
+      <p class="said agent-said"><span class="from">Astra, after looking at the running game</span><q>The current car reads too much like a toy: rounded tube fenders, a tall glass cabin, and broad reflections hide its body panels.</q></p>
+      <p>Decision: rework the body shape but leave the invisible collision box and wheel positions exactly where they are, so the handling does not change.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug review"><time>8:57 – 8:59</time><div class="body">
+      <p><span class="tag">Pam finds two defects</span>Working in parallel, Pam reads the physics code and finds that holding boost forces full forward throttle even while the player is pressing reverse, so you cannot brake while boosting, and that once a flip starts it cannot be cancelled. Pam patches both, adds tests (15 pass), and reports precise measurements: reversing under boost now cuts forward speed by 14.2 units over a fifth of a second.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>8:59</time><div class="body">
+      <p><span class="tag">Trust, but verify</span>Before accepting either fix, Astra reads the relevant section of RocketSim's car physics code, the open-source reimplementation of the original game, and nudges Pam to check its own changes against the same source.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug review"><time>9:00 – 9:02</time><div class="body">
+      <p><span class="tag">Pam reverses itself</span>The reference code says the original game <em>intentionally</em> forces forward throttle while boosting on the ground. Pam's braking fix felt sensible and would have moved the game further from the real thing. Pam removes it.</p>
+      <p class="said agent-said"><span class="from">Pam</span><q>RocketSim intentionally forces ground throttle forward while boosting.</q></p>
+      <p>The flip cancellation stays, but refined: pressing the opposite direction cancels only the pitch part of a diagonal flip; the sideways spin and the timer continue, matching the original's behavior. Stale flip input is cleared on reset and self-righting. Fourteen tests pass.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look bug"><time>9:00 – 9:01</time><div class="body">
+      <p><span class="tag">A throwaway comparison tool</span>Astra builds a small hidden web page with buttons: Front, Rear, Baseline, Refined. It loads a saved copy of the <em>old</em> car next to the new one at exactly the same camera angle, so before-and-after screenshots are fair. Looking at the result: <q>the first fender revision covers too much tire; I'm narrowing it.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags=""><time>9:02</time><div class="body">
+      <p><span class="tag">Fewer parts, more detail</span>Merges all the car's fixed pieces that share a material into single shapes. Each car drops from 228 separate objects to 37, while its triangle count rises from 25,188 to 46,092. Fewer objects means less work per frame for the graphics card even with more detail. The four wheels stay separate so they can still spin and steer.</p>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>9:03</time><div class="body">
+      <p><span class="tag">Second opinion</span>Spins up Oscar again, fresh, as reviewer. Oscar reads the exact set of changes, views the official reference and the before/after screenshots, runs the tests and build itself, and writes two small programs of its own: one builds the car in isolation and checks for broken geometry, the other fires the flip-cancel logic at six different orientations to confirm pitch cancels while sideways spin survives.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look bug"><time>9:04 – 9:06</time><div class="body">
+      <p><span class="tag">Full match, and a bug in its own tool</span>Runs a whole scripted match at accelerated speed to the final whistle; the car's position stays finite throughout. While exercising the controls, its testing page throws errors. The bug is in the test page (it was sending key presses to the wrong element), not the game. Astra fixes the tool and moves on.</p>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>9:06</time><div class="body">
+      <p class="said agent-said"><span class="from">Oscar</span><q>Verdict: pass against the bounded continuation bar. I found no blocking correctness regression in the diff.</q></p>
+      <p class="said agent-said"><span class="from">Oscar, on the car's looks</span><q>It still does not approach official Octane parity. That is a gap, not a regression.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>9:08 – 9:10</time><div class="body">
+      <p><span class="tag">Wrap-up</span>Presses the real keys (B, C, R, P) to confirm boost, camera, recovery, and pause still work; checks two common laptop screen sizes for overflow; updates the README, the reference notes, the verification notes, and the handoff; appends an entry to the shared work log.</p>
+      <div class="pairwrap">
+        <div class="pair">
+          <figure><img src="img/continuation-baseline-front.jpg" alt="Blue buggy with rounded tube fenders and a tall glass cabin, front three-quarter view." width="1000" height="562" loading="lazy"><figcaption>Before: tube fenders, tall cabin.</figcaption></figure>
+          <figure><img src="img/continuation-car-front.jpg" alt="Refined blue car with formed fenders, lower roof, split headlights, and a rear spoiler, same view." width="1000" height="562" loading="lazy"><figcaption>After: formed fenders, lower roof, split lamps.</figcaption></figure>
+        </div>
+        <figcaption>Same camera, same lighting, same spot on the pitch. Still, in Astra's own words, "stubby and toy-like beside the official reference."</figcaption>
+      </div>
+    </div></li>
+
+    <li class="beat" data-tags="human"><time>9:10</time><div class="body">
+      <p><span class="tag">Report</span>Astra sends a screenshot of the new car and a summary. <q>Changes remain uncommitted on improve/car-and-handling; nothing published.</q> It does not push. It waits.</p>
+    </div></li>
+
+    <li class="beat" data-tags="human gate"><time>9:15</time><div class="body">
+      <p class="said"><span class="from">Justin</span><q>commit an dpush to main and i'll start another thread</q></p>
+      <p>Within forty seconds Astra notes the approval in the handoff, commits (7 files, 122 lines added, 20 removed), merges into the main line, and pushes. The Guardian rates the push high risk and allows it because the instruction is right there. <q>Committed and pushed to main: 17c7d2c. Working tree is clean.</q></p>
+    </div></li>
+  </ol>
+</section>
+
+<!-- ============================ PERIOD 3 ============================ -->
+<section class="period" id="p3">
+  <div class="period-head">
+    <div class="num">3</div>
+    <div>
+      <h2>Last pass before humans play it</h2>
+      <div class="range">9:16 pm – 9:37 pm · about 18 minutes</div>
+    </div>
+  </div>
+  <p class="period-lede">Three helpers at once: one for the bot, one for the camera, one to grade the result. Astra fixes keyboard navigation and the goals itself, then writes a five-minute playtest guide. When Justin asks about the website hosting he just switched on, Astra finds it is misconfigured and fixes that too.</p>
+
+  <ol class="beats">
+    <li class="beat" data-tags="human"><time>9:16</time><div class="body">
+      <p class="said"><span class="from">Justin</span><q>continue the work in HANDOFF.md and deploy subagents as you need. this is the last one before human testing</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="review bug"><time>9:17 – 9:18</time><div class="body">
+      <p><span class="tag">Jim finds the bot parking in its own net</span>Astra spins up Jim to hunt for real physics and bot failures. Jim runs the bot's decision function for 7,200 simulated steps with the ball sitting deep in the bot's own half, and reproduces a stall: the bot aims for a spot "behind the ball" that is inside its own goal, drives in, and parks against the back wall. The fix makes the bot's attack direction depend on which team it is on. Regression test added, 15 pass. Jim declines to touch anything else: <q>No recovery/wall retune was justified by the probe.</q> Total time, about ninety seconds.</p>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>9:18 – 9:22</time><div class="body">
+      <p><span class="tag">Darryl builds camera containment</span>A second helper reads the arena's actual collision geometry (quarter-circle corners, a goal opening of a specific width, a roof at a specific height) and writes a new camera module that keeps the camera inside that same outline, so it stops clipping through corner walls and goal roofs. Applied both before and after smoothing. Four tests. Nineteen pass.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug"><time>9:19 – 9:20</time><div class="body">
+      <p><span class="tag">Tab key</span>Meanwhile Astra fixes a keyboard-accessibility bug: the game swallowed the Tab key even when the pause menu was open, so nobody could move between the menu buttons with a keyboard. Also renames the solo-mode label from FREE PLAY to PRACTICE, since it still runs a clock.</p>
+    </div></li>
+
+    <li class="beat" data-tags=""><time>9:20 – 9:22</time><div class="body">
+      <p><span class="tag">Stadium</span>Merges all the stadium's fixed architecture by material, because <q>stadium architecture never moves.</q> Lines the inside of each goal with a procedurally drawn perforated-metal texture, adds ribs and lights, removes the cage mesh that had been drawn across the goal mouth, and adds floodlight banks at each end.</p>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>9:22</time><div class="body">
+      <p><span class="tag">Final reviewer</span>Spins up Oscar, set to think harder than usual before answering, with one question: is there anything that should block a human from playtesting this? Over the next seven minutes Astra keeps pushing Oscar updates and screenshots as the work moves, four separate times.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>9:23 – 9:25</time><div class="body">
+      <p><span class="tag">Checks</span>Adds a test that Tab and Space keep their normal browser behavior inside the menu. Runs a 30-second rendered driving sample: about 60 frames per second. Runs an accelerated full match to the final whistle: score 0–31 against a scripted player who drives in loops without aiming, positions finite, no errors. Then presses the real keys: P to pause, Tab and Shift-Tab to move focus, Space to resume, B, C, R.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug look"><time>9:25 – 9:26</time><div class="body">
+      <p><span class="tag">Two camera bugs</span>Astra adds a "backboard camera" scenario to its testing page and finds two problems Darryl's first pass missed. A high camera behind the goal gets pulled down into the goal tunnel. And when the car turns exactly 180 degrees, the camera freezes facing the old way: blending two exactly opposite directions averages out to nothing, so it never rotates.</p>
+      <div class="pairwrap">
+        <div class="pair">
+          <figure><img src="img/preflight-backboard-before.jpg" alt="Camera pressed against the stadium seating behind the goal, looking at the car from inside the stands; a debug overlay reads Frozen aerial backboard camera scenario." width="1000" height="562" loading="lazy"><figcaption>Before: the camera has been dragged into the stands.</figcaption></figure>
+          <figure><img src="img/preflight-backboard-final.jpg" alt="Same scenario after the fix: a high aerial view over the car looking down the length of the pitch toward the far goal." width="1000" height="562" loading="lazy"><figcaption>After: same scenario, camera stays field-side and high.</figcaption></figure>
+        </div>
+        <figcaption>9:26 and 9:29 pm. The small box in the top left is Astra's own scenario label, part of the throwaway testing page, not the game.</figcaption>
+      </div>
+    </div></li>
+
+    <li class="beat" data-tags="review bug"><time>9:26 – 9:28</time><div class="body">
+      <p><span class="tag">Same helper, follow-up task</span>Rather than starting a new helper, Astra sends Darryl a follow-up describing both bugs. Darryl switches the camera from blending direction vectors to blending the <em>angle</em> itself, always turning the short way round, and tightens the aerial clamp so a camera above the goal roof stays on the field side. Twenty-one tests pass.</p>
+    </div></li>
+
+    <li class="beat" data-tags=""><time>9:27</time><div class="body">
+      <p><span class="tag">Playtest guide</span>In parallel Astra writes a one-page guide for the first human test: a minute-by-minute route through driving, cameras, jumps, walls, and scoring, what to write down when something feels wrong, and two closing questions. <q>Would you voluntarily play another match? What is the first thing you would change?</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>9:29</time><div class="body">
+      <p><span class="tag">Oscar's verdict, the hard way</span>Oscar's own tools kept failing: the shared browser was locked by another session, and a hidden tab could not see the game's internal state. Instead of giving up, Oscar reproduced the camera math by hand in a small program. Midway it noticed the code had changed underneath it (Darryl's follow-up had just landed) and re-read the current files rather than grading a stale copy.</p>
+      <p class="said agent-said"><span class="from">Oscar</span><q>Verdict: no blocker remains for human playtesting.</q></p>
+      <p class="small muted">One flag: four new files were not yet tracked by version control. Not a playtest problem, but a problem if anyone tried to commit.</p>
+    </div></li>
+
+    <li class="beat" data-tags="human"><time>9:31</time><div class="body">
+      <p><span class="tag">Report</span><q>Ready for human testing: open the game and press Resume. Fixed bot stalls, camera edge cases and menu navigation; refined goals and stadium lighting. 21 tests pass, build passes, and independent review found no blocker. Original-game fidelity remains approximate. Changes are uncommitted.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="human"><time>9:33</time><div class="body">
+      <p class="said"><span class="from">Justin</span><q>ok commit and merge to main. also i turned on pages deploy on main, do i need to change seomthing?</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="bug look"><time>9:33 – 9:34</time><div class="body">
+      <p><span class="tag">Yes, actually</span>GitHub Pages is GitHub's free way to turn a repository into a public website. Astra queries the repository's settings and finds Pages is in "legacy" mode: it would serve the raw project files as a website. But this game needs a build step first (the source has to be bundled before a browser can run it), so the published site would have been broken. Astra reads Vite's own hosting docs to confirm the fix.</p>
+      <p class="said agent-said"><span class="from">Astra</span><q>Pages is currently serving the repository source, but this Vite app needs a build step.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="gate"><time>9:34</time><div class="body">
+      <p><span class="tag">Automates the deploy</span>Adds a configuration file so the game knows its web address differs on GitHub versus a laptop, and a small automated workflow: on every push to the main line, GitHub itself runs the tests, builds the game, and publishes the result. Switches Pages to workflow mode through the API. Commits 16 files, merges, pushes. Guardian: high risk, allowed. <q>The user explicitly authorized committing and merging this pass to main.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>9:35 – 9:36</time><div class="body">
+      <p><span class="tag">Checks the live site</span>Watches GitHub's build run to completion, opens the public address in a browser, presses B and C on the live game, confirms an empty error console. <q>I fixed Pages to build and deploy through GitHub Actions. Nothing else you need to change.</q></p>
+    </div></li>
+  </ol>
+</section>
+
+<!-- ============================ PERIOD 4 ============================ -->
+<section class="period" id="p4">
+  <div class="period-head">
+    <div class="num">4</div>
+    <div>
+      <h2>"Oops, forgot about mobile"</h2>
+      <div class="range">9:43 pm – 9:56 pm · about 11 minutes</div>
+    </div>
+  </div>
+  <p class="period-lede">The shortest session and the most casual instruction. Astra designs a touch layout, tests it in a phone emulator, gets a code review, reports, and waits. After the go-ahead it deploys and then tests the real public site, not just its local copy.</p>
+
+  <ol class="beats">
+    <li class="beat" data-tags="human"><time>9:45</time><div class="body">
+      <p class="said"><span class="from">Justin</span><q>oops, forgot about mobile! is that too much? you got this. make it in landscape mode, so if it detects mobile, indicate to user to landscape. then, i'm not sure how to do ui, but i trust you! hopefully shouldnt affect the desktop game play too much</q></p>
+      <p class="small muted">The conversation had a false start at 9:43 that stopped almost immediately. This is the restart.</p>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>9:45</time><div class="body">
+      <p><span class="tag">Plan</span>Reads the control, display, and layout code plus the house design rules, then states the plan: a driving stick under the left thumb, jump and boost under the right, smaller drift and air-roll buttons; turning the phone upright pauses the match and shows a rotate prompt; coming back to landscape requires a deliberate tap on Resume rather than resuming by surprise.</p>
+    </div></li>
+
+    <li class="beat" data-tags=""><time>9:46 – 9:48</time><div class="body">
+      <p><span class="tag">Builds it</span>Adds a touch state to the existing controls so touch feeds the very same inputs the keyboard does, which means the physics does not change at all. Writes a new touch module: an analog stick with a 12% dead zone, tracking for several fingers at once, and detection of coarse-pointer devices. Phones start paused, with the lighter graphics setting selected. The 21 existing tests still pass.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug"><time>9:48 – 9:49</time><div class="body">
+      <p><span class="tag">Tooling friction</span>Trying to test in a phone emulator fails: <q>Browser is already in use.</q> Astra hunts through cache folders for a separate browser install it can drive on its own.</p>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>9:49</time><div class="body">
+      <p><span class="tag">Reviewer</span>Spins up Dwight, a read-only reviewer on gpt-5.5, told not to open a browser and to focus on five things: does releasing a finger cancel the input, does portrait really pause, do several fingers work at once, does anything overlap, did desktop break.</p>
+    </div></li>
+
+    <li class="beat" data-tags="bug look"><time>9:50</time><div class="body">
+      <p><span class="tag">A bug in its own test</span>Astra's mobile test script fails an assertion. The cause is in the script, not the game: it sent a "finger lifted" event that still carried finger positions, which the browser's automation protocol forbids. One-line fix to the script, rerun, pass.</p>
+      <figure><img src="img/mobile-landscape.jpg" alt="Phone-shaped landscape view: a DRIVE stick at lower left, ROLL buttons, DRIFT and JUMP buttons, a large BOOST button at lower right, the kickoff countdown showing 3." width="1000" height="462" loading="lazy"><figcaption>9:50 pm. The landscape layout in a phone emulator. The center of the screen is kept clear of buttons.</figcaption></figure>
+    </div></li>
+
+    <li class="beat" data-tags="look"><time>9:50 – 9:52</time><div class="body">
+      <p><span class="tag">Sizes and copy</span>Screenshots at five phone and tablet sizes, one of them portrait. Changes the pause-screen text on touch devices to explain the controls: <q>Left stick to drive. Tap JUMP, hold BOOST. More controls below.</q> Fixes a real rendering bug found along the way: the post-processing effects were not following the chosen graphics quality, which would have been heavy on phone screens.</p>
+    </div></li>
+
+    <li class="beat" data-tags="review"><time>9:52</time><div class="body">
+      <p class="said agent-said"><span class="from">Dwight</span><q>Verdict: no actionable defects found in the reviewed mobile touch patch.</q></p>
+      <p>Dwight confirms touch is additive to keyboard state, released fingers clear their inputs, portrait blocks resuming until landscape, and desktop paths are untouched. Twenty-three tests pass. Dwight notes it did not test gestures in a browser; that was Astra's lane.</p>
+    </div></li>
+
+    <li class="beat" data-tags="human"><time>9:53</time><div class="body">
+      <p><span class="tag">Report</span>Landscape prompt, driving stick, four buttons, compact display, lighter graphics default on phones, desktop unchanged. <q>Real-phone comfort/performance still needs a playtest.</q> And: <q>Not yet committed or deployed.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="human gate"><time>9:54</time><div class="body">
+      <p class="said"><span class="from">Justin</span><q>commit and deploy/merge</q></p>
+      <p>Commit (12 files, 176 lines added, 6 removed), merge, push. Guardian: high risk, allowed. <q>The user explicitly requested committing, merging into main, and deploying.</q></p>
+    </div></li>
+
+    <li class="beat" data-tags="look bug"><time>9:54 – 9:56</time><div class="body">
+      <p><span class="tag">Tests the real thing</span>A first check of GitHub's build status fails with a network hiccup; retried, it works. Astra watches the build finish, then writes a fresh test script and runs it against the <em>public</em> address rather than its local copy: portrait prompt, landscape resume, touch controls, desktop keys, no page errors. <q>Committed as a269207, merged into main, and deployed.</q></p>
+    </div></li>
+  </ol>
+</section>
+
+<hr>
+
+<h2 id="notice">What to notice</h2>
+<p>If you are learning how these tools work, the code is the least interesting thing on this page. Watch the habits.</p>
+<ol class="notice">
+  <li><b>It read the rules before it wrote code.</b> Every session opened by reading the project's instruction files and the previous handoff note. Nothing about the game itself happened in the first minute. (5:29, 8:55, 9:16, 9:45)</li>
+  <li><b>It looked at its own screenshots.</b> Not "the code should render a car" but "here is a picture, and the hood is hollow." The inward-facing triangles at 5:56 and the camera dragged into the stands at 9:26 were both caught by eye.</li>
+  <li><b>It measured instead of asserting.</b> Frames per second, mesh counts, flip timers, test counts. When a number got worse (56 to 53 fps), it reported both.</li>
+  <li><b>It got second opinions from a different model that had not seen its reasoning.</b> Five times. The reviewers found a false-green test setup, a boost bug that corrupted aerial control, and a collision box floating below the car. The builder never graded its own work.</li>
+  <li><b>It checked the reference before trusting a plausible fix.</b> Pam's braking-while-boosting change felt right and was wrong. Reading the open-source reimplementation of the original's physics is what caught it. (9:00)</li>
+  <li><b>It debugged its own tools as often as the product.</b> A test page sending keys to the wrong element, a mobile script with malformed touch events, a locked browser, a stale cached file. Watching an agent work looks a lot like watching someone fix their own equipment.</li>
+  <li><b>It stopped before publishing, every time.</b> Four reports ended with a version of "uncommitted, nothing published." All four pushes happened only after Justin typed a go-ahead. The one time it tried to authorize itself, at 6:08, the safety referee blocked it.</li>
+  <li><b>Two agents in parallel needed a referee.</b> The GitHub thread did all the setup and was still not allowed to push, because the "yes" was typed in a different conversation. Trying to route around the denial by asking another agent to push was denied too. (6:57)</li>
+  <li><b>It never claimed the thing it did not achieve.</b> The brief asked for "nearly identical." Every report said "approximation." The shipped documentation says the car is "a recognizable procedural buggy, not a legitimate Octane mesh."</li>
+  <li><b>It wrote notes for whoever came next.</b> The handoff document is longer than most of the code files and includes a list of bugs already fixed so they are not re-introduced.</li>
+</ol>
+
+<h2 id="limits">Honest limits</h2>
+<p><b>It is a playable rocket-car soccer game with a similar layout, and that is all it is.</b> The car, stadium, effects, and handling are custom approximations of the original. No human had played a full five-minute match when the evening ended, and the agent said so.</p>
+<p><b>The code is fast code, not teaching code.</b> The source is dense: some lines run past 1,600 characters, and eighteen files hold about 105 kilobytes in roughly a thousand lines. It was written to be run, not to be read by a student. If you open it expecting a tutorial, you will be disappointed. If you open the handoff and verification documents instead, you will find the story.</p>
+<p><b>It was not cheap.</b> Roughly 42 million tokens were read across the evening, the great majority of them the same project files re-read each turn from cache, plus about 200,000 tokens written. The safety referee's own reading added up to a few million tokens on top of the builders'. What this costs depends entirely on the plan behind it.</p>
+<p><b>Nine messages is not zero supervision.</b> Justin knew what to ask for, wrote a detailed brief, keeps a set of house rules that every agent reads on entry, and said no to publishing until he had played it. The speed is real. So is the setup that made it safe to go fast.</p>
+
+<footer>
+  <p><b>How this page was made.</b> The AI tool (OpenAI's Codex desktop app) keeps a full log of every session as line-by-line JSON files, about 80 megabytes across 23 threads for this project. Those logs record every command run, every file written, every screenshot inspected, every message between agents, and every safety judgment. They do not include the models' private reasoning, which is stored encrypted. The logs were condensed by script, summarized thread by thread by Claude (Sonnet subagents doing the reading, Fable 5.1 doing the writing), and cross-checked against the repository's own README, HANDOFF, and VERIFICATION documents. Screenshots are the agent's own test captures from that night. All times are Hawaiʻi Standard Time.</p>
+  <p>Play the result: <a href="../">Champions Field</a>. Read the source and the handoff notes: <a href="https://github.com/lpcode808/RecreateRocketLeague">github.com/lpcode808/RecreateRocketLeague</a>. Rocket League, Octane, and Champions Field are trademarks of Psyonix LLC and Epic Games; this recreation is a non-commercial study and bundles none of the original's assets.</p>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var beats = Array.prototype.slice.call(document.querySelectorAll('.beat'));
+  var count = document.getElementById('count');
+  var radios = document.querySelectorAll('.filter input[name="f"]');
+  function apply(value) {
+    var shown = 0;
+    beats.forEach(function (b) {
+      var tags = (b.getAttribute('data-tags') || '').split(/\s+/);
+      var show = value === 'all' || tags.indexOf(value) !== -1;
+      b.classList.toggle('hide', !show);
+      if (show) shown++;
+    });
+    count.textContent = value === 'all' ? beats.length + ' moments' : shown + ' of ' + beats.length + ' moments';
+  }
+  Array.prototype.forEach.call(radios, function (r) {
+    r.addEventListener('change', function () { apply(r.value); });
+  });
+  apply('all');
+})();
+</script>
+</body>
+</html>
