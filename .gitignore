@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.DS_Store
+test-results/
+.playwright-mcp/
+rocket-first-pass.png
