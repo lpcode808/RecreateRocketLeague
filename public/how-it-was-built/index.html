@@ -92,11 +92,51 @@
   .commentary summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
   .commentary .answer { padding: 0.25rem 0.25rem 1rem; }
   .commentary .answer > :last-child { margin-bottom: 0; }
-  .work-loop { margin: 1.5rem 0; }
-  .work-loop ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
-  .work-loop li { padding: 0.65rem 0; border-bottom: 1px solid var(--rule); }
-  .work-loop strong { display: block; font-family: 'Sora', system-ui, sans-serif; font-size: 0.95rem; }
-  .work-loop figcaption { margin-top: 0.75rem; }
+  .explain-figure { margin: 1.75rem 0; padding: 1.1rem 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); }
+  .explain-figure .figure-title { font-family: 'Sora', system-ui, sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 1.1rem; }
+  .explain-figure figcaption { margin-top: 1rem; font-size: 0.9rem; color: var(--muted); }
+  .explain-figure strong { font-family: 'Sora', system-ui, sans-serif; font-size: 1rem; line-height: 1.4; }
+  .prompt-map { margin: 0; }
+  .prompt-map > div { display: grid; grid-template-columns: 1fr 1.3rem 1fr; gap: 0.65rem; padding: 0.8rem 0; border-bottom: 1px solid var(--rule); align-items: start; }
+  .prompt-map > div:last-child { border-bottom: 0; }
+  .prompt-map dt { font-weight: 600; }
+  .prompt-map dd { margin: 0; }
+  .prompt-map dt::after { content: ' →'; color: var(--orange); }
+  .prompt-map dt { grid-column: 1 / 3; }
+  .prompt-map dd { grid-column: 3; }
+  .model-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .model-inputs > div { padding: 0.9rem 0; border-top: 2px solid var(--blue); }
+  .model-inputs > div:last-child { border-color: var(--orange); }
+  .model-inputs p { margin: 0.4rem 0 0; }
+  .merge-arrows { display: grid; grid-template-columns: 1fr 1fr; text-align: center; color: var(--muted); font-size: 1.5rem; line-height: 1.5; }
+  .model-output { padding: 1rem; background: var(--tint); text-align: center; }
+  .model-output p { margin: 0.4rem 0 0; }
+  .agent-cycle { counter-reset: cycle; list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem 2rem; }
+  .agent-cycle li { position: relative; padding: 0.75rem 0 0; border-top: 1px solid var(--rule); }
+  .agent-cycle strong { display: block; }
+  .agent-cycle strong::before { counter-increment: cycle; content: counter(cycle) '. '; color: var(--orange); }
+  .agent-cycle p { margin: 0.4rem 0 0; }
+  .agent-cycle li::after { content: '↓'; display: block; color: var(--orange); font-size: 1.4rem; }
+  .agent-cycle li:nth-child(1)::after { content: '→'; position: absolute; top: 0.6rem; right: -1.5rem; }
+  .agent-cycle li:nth-child(3) { grid-column: 2; grid-row: 2; }
+  .agent-cycle li:nth-child(3)::after { content: '←'; position: absolute; top: 0.6rem; left: -1.5rem; }
+  .agent-cycle li:nth-child(4) { grid-column: 1; grid-row: 2; }
+  .agent-cycle li:nth-child(4)::after { content: '↑'; }
+  .evidence-map { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+  .evidence-map > div { padding: 0.9rem 0; border-bottom: 1px solid var(--rule); }
+  .evidence-map p { margin: 0.4rem 0 0; }
+  .evidence-map .evidence-limit { color: var(--muted); }
+  @media (max-width: 560px) {
+    .prompt-map > div { grid-template-columns: 1fr; gap: 0.3rem; }
+    .prompt-map dt, .prompt-map dd { grid-column: 1; }
+    .prompt-map dt::after { content: ' ↓'; }
+    .model-inputs { gap: 0.85rem; }
+    .model-inputs strong { font-size: 0.95rem; }
+    .agent-cycle, .evidence-map { grid-template-columns: 1fr; gap: 0; }
+    .agent-cycle li:nth-child(n) { grid-column: auto; grid-row: auto; }
+    .agent-cycle li:nth-child(n)::after { content: '↓'; position: static; }
+    .agent-cycle li:last-child::after { content: '↳ Back to 1'; font-family: 'Sora', system-ui, sans-serif; font-size: 0.9rem; padding: 0.7rem 0; }
+  }
 
   /* box score */
   .score { border-top: 3px solid var(--boost-blue); border-bottom: 1px solid var(--rule); margin: 2rem 0 0; }
@@ -868,6 +908,16 @@
 <div class="answer">
 <p>The <a href="#original-prompt">original prompt above</a> removed several expensive guesses. It named a browser game, chose Three.js and a physics engine, specified the controls and scoring rules, and required the first screen to be the game. The agent had enough direction to start assembling a playable path instead of designing a homepage or debating platforms.</p>
 <p>It set priorities and fallbacks. A bot was desirable; solo practice was acceptable if the bot became risky. It asked for separate rendering, physics, controls, and game state, which gave later repairs places to land. The verification checklist named things a browser could demonstrate: movement, collisions, goals, resets, and a camera that keeps the car in view.</p>
+<figure class="explain-figure" aria-labelledby="prompt-map-caption">
+<p class="figure-title">A useful instruction removes a guess</p>
+<dl class="prompt-map">
+<div><dt>“First screen should be the actual game”</dt><dd>Start with the playable scene.</dd></div>
+<div><dt>Three.js + a real physics engine</dt><dd>Build on existing graphics and collision systems.</dd></div>
+<div><dt>Bot optional; solo practice acceptable</dt><dd>Keep a smaller playable fallback.</dd></div>
+<div><dt>Test goals, resets, controls, and camera</dt><dd>Return evidence someone can inspect.</dd></div>
+</dl>
+<figcaption id="prompt-map-caption">Each prompt choice is paired with a decision it helps resolve. These are directions to follow, not guarantees of success.</figcaption>
+</figure>
 <p>The later request to compare and keep iterating gave the agent room to repair its first attempt. But “nearly identical” did not supply exact vehicle geometry or measured handling data. The result remained an approximation. Specific references and observable acceptance checks carry more information than stronger adjectives.</p>
 <p>For another project, supply the intended experience, real inputs, essential constraints, acceptable shortcuts, and evidence you want back. State what the agent may change or publish. You do not need to prescribe every function; you do need to make a wrong outcome recognizable.</p>
 </div>
@@ -879,6 +929,16 @@
 <p>Weights are the numerical parameters learned during training. They shape how the model interprets a request and generates its next output. Broad training gives a model patterns it can apply to code, language, images, and problem solving; further training can improve how it follows instructions and uses tools. This is a general account of modern models, not a description of Astra’s undisclosed training recipe.</p>
 <p>In coding, the useful ability is to connect a symptom to a possible cause, choose a change, and adapt when evidence contradicts it. A hollow-looking hood might come from triangle orientation; an unresponsive control might come from an event sent to the wrong element. Knowing plausible explanations helps the model decide what to inspect. It does not make its first explanation correct.</p>
 <p>The project files and prompt supply the current situation. Reading them during this task does not retrain the weights. A handoff file can help a later session because the agent can read it, not because the model permanently absorbed this game.</p>
+<figure class="explain-figure" aria-labelledby="weights-caption">
+<p class="figure-title">Learned ability meets the current job</p>
+<div class="model-inputs">
+<div><strong>Weights</strong><p>Parameters learned in training.</p><p>Stay fixed during this coding task.</p></div>
+<div><strong>Context</strong><p>The brief, files, instructions, and tool results.</p><p>Changes as the task proceeds.</p></div>
+</div>
+<div class="merge-arrows" aria-hidden="true"><span>↘</span><span>↙</span></div>
+<div class="model-output"><strong>Model generates the next output</strong><p>An explanation, proposed edit, or tool request.</p></div>
+<figcaption id="weights-caption">Both contribute to the output. New test results change the context the model can use; they do not retrain its weights. This is a conceptual view, not Astra’s internal architecture.</figcaption>
+</figure>
 <p>We cannot infer Astra’s parameter count, training data mix, or the share of this result attributable to weights from these logs. Nor does this run establish how another model would perform with the same tools and brief.</p>
 </div>
 </details>
@@ -887,14 +947,15 @@
 <summary>What does the harness add?</summary>
 <div class="answer">
 <p>The harness is the software that runs the model as an agent. It supplies instructions and context, exposes tools, executes permitted actions, and brings results back into the conversation. Here, Codex connected the model to files, a terminal, a browser, and other agents. A proposed repair could become an edited file, then a running game, then a screenshot or test failure the model could inspect.</p>
-<figure class="work-loop" aria-labelledby="loop-caption">
-<ol>
-<li><strong>1. Brief + project state → model</strong> The request, relevant files, and previous results give the next decision its context.</li>
-<li><strong>2. Model → tool request</strong> The model proposes an edit, command, browser action, or inspection.</li>
-<li><strong>3. Harness → permitted action</strong> The surrounding software runs the tool within its access and approval rules.</li>
-<li><strong>4. Result → model → next decision</strong> An error, screenshot, or measurement can lead to a repair or a report back.</li>
+<figure class="explain-figure" aria-labelledby="loop-caption">
+<p class="figure-title">One repair, around the loop</p>
+<ol class="agent-cycle">
+<li><strong>Model proposes</strong><p>Given the brief and current evidence, choose an edit or inspection.</p></li>
+<li><strong>Harness executes</strong><p>Run the requested tool if access and approval rules permit it.</p></li>
+<li><strong>Tools return evidence</strong><p>A changed file, test output, error, or browser capture comes back.</p></li>
+<li><strong>Model reassesses</strong><p>Use that evidence to repair, inspect further, or report the result.</p></li>
 </ol>
-<figcaption id="loop-caption">The feedback loop. A tool result changes the evidence available for the next step; it does not update the model’s weights.</figcaption>
+<figcaption id="loop-caption">Read 1 → 2 → 3 → 4. A repair can start another circuit; a completed task returns to the human. The loop makes checking possible, but a bad check can still mislead it.</figcaption>
 </figure>
 <p>The distinction matters when comparing demos. The same model with only a text box cannot perform the same workflow as one with a working checkout and browser. Better tools can expose a mistake; the model still has to interpret the evidence correctly. This build even contained faulty test scripts, so the harness itself needed debugging.</p>
 <p>Extra instructions and helpers have costs. Conflicting rules can stall work, irrelevant context can distract, and two agents can make incompatible edits. OpenAI’s <a href="https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md">Astra guidance</a> specifically recommends reviewing loaded instructions and calibrating delegation and testing to the task.</p>
@@ -915,6 +976,16 @@
 <div class="answer">
 <p>Correctness, taste, and proof. This build produced a test command that passed without running tests, a camera that could enter the stands, and a proposed boost fix that disagreed with the reference. A persuasive explanation and a green terminal line can both be wrong.</p>
 <p>Tests answer the questions they exercise. A screenshot can show a missing surface but cannot establish that a five-minute match feels good. A phone-sized browser view can catch layout problems but cannot prove thumb comfort or sustained performance on a physical phone. The remaining human playtest was real unfinished work.</p>
+<figure class="explain-figure" aria-labelledby="evidence-caption">
+<p class="figure-title">Match the question to the check</p>
+<div class="evidence-map">
+<div><strong>Automated rule test</strong><p>Does a fully crossed ball score?</p><p class="evidence-limit">Covers the cases the test exercises.</p></div>
+<div><strong>Browser inspection</strong><p>Is the car visible? Do controls respond?</p><p class="evidence-limit">Covers the views and actions inspected.</p></div>
+<div><strong>Physical phone test</strong><p>Can thumbs reach the controls? Does it stay responsive?</p><p class="evidence-limit">Needs the actual device and sustained play.</p></div>
+<div><strong>Human match</strong><p>Is chasing the ball fun for five minutes?</p><p class="evidence-limit">Needs a person’s judgment through play.</p></div>
+</div>
+<figcaption id="evidence-caption">These checks answer different questions. Passing one does not stand in for the others. Physical-phone testing and a full human match were still open at the end of the documented evening.</figcaption>
+</figure>
 <p>The larger obligations of software remain too: protecting user data, handling failures, maintaining dependencies, paying for operation, and deciding who supports it later. This small browser game does not demonstrate those capabilities in a production service. Nor does a successful build settle ownership or permission to reuse somebody else’s assets.</p>
 </div>
 </details>
