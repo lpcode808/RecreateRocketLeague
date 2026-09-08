@@ -81,6 +81,23 @@
   .source-prompt ul ul { margin: 0.2rem 0; }
   @media (max-width: 480px) { .source-prompt summary { align-items: flex-start; flex-direction: column; gap: 0.25rem; } }
 
+
+  /* Commentary uses native disclosures: readable and operable without JavaScript. */
+  .commentary { margin-top: 3.5rem; }
+  .commentary details { border-top: 1px solid var(--rule); }
+  .commentary details:last-of-type { border-bottom: 1px solid var(--rule); }
+  .commentary summary { padding: 1rem 0.25rem; cursor: pointer; font-family: 'Sora', system-ui, sans-serif; font-size: 1rem; font-weight: 600; line-height: 1.5; }
+  .commentary summary::marker { color: var(--orange); }
+  .commentary summary:hover { color: var(--orange); }
+  .commentary summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+  .commentary .answer { padding: 0.25rem 0.25rem 1rem; }
+  .commentary .answer > :last-child { margin-bottom: 0; }
+  .work-loop { margin: 1.5rem 0; }
+  .work-loop ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; }
+  .work-loop li { padding: 0.65rem 0; border-bottom: 1px solid var(--rule); }
+  .work-loop strong { display: block; font-family: 'Sora', system-ui, sans-serif; font-size: 0.95rem; }
+  .work-loop figcaption { margin-top: 0.75rem; }
+
   /* box score */
   .score { border-top: 3px solid var(--boost-blue); border-bottom: 1px solid var(--rule); margin: 2rem 0 0; }
   .score table { width: 100%; border-collapse: collapse; font-family: 'Sora', system-ui, sans-serif; font-size: 0.95rem; }
@@ -203,7 +220,9 @@
   <p class="dek muted">The code itself is a rough recreation, and it says so about itself. What makes the evening worth studying is the speed, and the habits the AI kept while going fast: reading the rules first, checking its own work with screenshots, asking a second AI to find problems, and stopping to ask before publishing.</p>
 </header>
 
-<details class="source-prompt">
+<p class="small ui" style="margin-top:1.5rem"><a href="#coding-commentary">What does this mean for coding? Read the commentary ↓</a></p>
+
+<details class="source-prompt" id="original-prompt">
   <summary><span>Read the full original build prompt</span><a href="https://x.com/LLMJunky/status/2096043707015274818?s=20">View post on X ↗</a></summary>
   <div class="prompt-copy">
     <p>Here's the prompt:</p>
@@ -407,6 +426,7 @@
   <dt>Token</dt><dd>The unit AI models read and write in, about three-quarters of a word.</dd>
 </dl>
 
+<div class="play-by-play">
 <div class="filter" role="region" aria-label="Filter the play-by-play">
   <fieldset>
     <legend>Show</legend>
@@ -811,6 +831,8 @@
 
 <hr>
 
+</div>
+
 <h2 id="notice">What to notice</h2>
 <p>If you are learning how these tools work, the code is the least interesting thing on this page. Watch the habits.</p>
 <ol class="notice">
@@ -825,6 +847,88 @@
   <li><b>It never claimed the thing it did not achieve.</b> The brief asked for "nearly identical." Every report said "approximation." The shipped documentation says the car is "a recognizable procedural buggy, not a legitimate Octane mesh."</li>
   <li><b>It wrote notes for whoever came next.</b> The handoff document is longer than most of the code files and includes a list of bugs already fixed so they are not re-introduced.</li>
 </ol>
+
+
+<section class="commentary" id="coding-commentary" aria-labelledby="commentary-title">
+<h2 id="commentary-title">What does this mean for coding?</h2>
+<p>A working game is a useful place to start this conversation. You can drive it, break it, and read its source. These notes draw lessons from this build; one evening is not a controlled comparison of models or a forecast of everyone’s job.</p>
+<p class="small muted">Open any question. Each answer stands on its own.</p>
+
+<details>
+<summary>What becomes practical when an AI can carry a build this far?</summary>
+<div class="answer">
+<p>You can try an idea before you can personally implement every part of it. A teacher can ask for a small simulation, a designer can test an interaction, and a programmer can explore an unfamiliar library in a working project. The useful result is something you can judge through use. A description of a game cannot tell you whether its camera makes you feel sick.</p>
+<p>This project joined graphics, physics, controls, scoring, a camera, and hosting. Each piece is familiar software work; getting them to cooperate is the larger task. A capable coding agent can take on more of that coordination and follow errors across files. That makes a complete first version more accessible to someone who would otherwise stall at setup.</p>
+<p>For an experienced developer, the opportunity extends to bug reproduction, migrations, test fixtures, and internal tools. The time saved still has to exceed the time spent explaining the job and checking the result. A small, well-bounded task may be better served by a cheaper model or an ordinary script.</p>
+</div>
+</details>
+
+<details>
+<summary>How did the original prompt get the project moving?</summary>
+<div class="answer">
+<p>The <a href="#original-prompt">original prompt above</a> removed several expensive guesses. It named a browser game, chose Three.js and a physics engine, specified the controls and scoring rules, and required the first screen to be the game. The agent had enough direction to start assembling a playable path instead of designing a homepage or debating platforms.</p>
+<p>It set priorities and fallbacks. A bot was desirable; solo practice was acceptable if the bot became risky. It asked for separate rendering, physics, controls, and game state, which gave later repairs places to land. The verification checklist named things a browser could demonstrate: movement, collisions, goals, resets, and a camera that keeps the car in view.</p>
+<p>The later request to compare and keep iterating gave the agent room to repair its first attempt. But “nearly identical” did not supply exact vehicle geometry or measured handling data. The result remained an approximation. Specific references and observable acceptance checks carry more information than stronger adjectives.</p>
+<p>For another project, supply the intended experience, real inputs, essential constraints, acceptable shortcuts, and evidence you want back. State what the agent may change or publish. You do not need to prescribe every function; you do need to make a wrong outcome recognizable.</p>
+</div>
+</details>
+
+<details>
+<summary>What are the weights doing?</summary>
+<div class="answer">
+<p>Weights are the numerical parameters learned during training. They shape how the model interprets a request and generates its next output. Broad training gives a model patterns it can apply to code, language, images, and problem solving; further training can improve how it follows instructions and uses tools. This is a general account of modern models, not a description of Astra’s undisclosed training recipe.</p>
+<p>In coding, the useful ability is to connect a symptom to a possible cause, choose a change, and adapt when evidence contradicts it. A hollow-looking hood might come from triangle orientation; an unresponsive control might come from an event sent to the wrong element. Knowing plausible explanations helps the model decide what to inspect. It does not make its first explanation correct.</p>
+<p>The project files and prompt supply the current situation. Reading them during this task does not retrain the weights. A handoff file can help a later session because the agent can read it, not because the model permanently absorbed this game.</p>
+<p>We cannot infer Astra’s parameter count, training data mix, or the share of this result attributable to weights from these logs. Nor does this run establish how another model would perform with the same tools and brief.</p>
+</div>
+</details>
+
+<details>
+<summary>What does the harness add?</summary>
+<div class="answer">
+<p>The harness is the software that runs the model as an agent. It supplies instructions and context, exposes tools, executes permitted actions, and brings results back into the conversation. Here, Codex connected the model to files, a terminal, a browser, and other agents. A proposed repair could become an edited file, then a running game, then a screenshot or test failure the model could inspect.</p>
+<figure class="work-loop" aria-labelledby="loop-caption">
+<ol>
+<li><strong>1. Brief + project state → model</strong> The request, relevant files, and previous results give the next decision its context.</li>
+<li><strong>2. Model → tool request</strong> The model proposes an edit, command, browser action, or inspection.</li>
+<li><strong>3. Harness → permitted action</strong> The surrounding software runs the tool within its access and approval rules.</li>
+<li><strong>4. Result → model → next decision</strong> An error, screenshot, or measurement can lead to a repair or a report back.</li>
+</ol>
+<figcaption id="loop-caption">The feedback loop. A tool result changes the evidence available for the next step; it does not update the model’s weights.</figcaption>
+</figure>
+<p>The distinction matters when comparing demos. The same model with only a text box cannot perform the same workflow as one with a working checkout and browser. Better tools can expose a mistake; the model still has to interpret the evidence correctly. This build even contained faulty test scripts, so the harness itself needed debugging.</p>
+<p>Extra instructions and helpers have costs. Conflicting rules can stall work, irrelevant context can distract, and two agents can make incompatible edits. OpenAI’s <a href="https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md">Astra guidance</a> specifically recommends reviewing loaded instructions and calibrating delegation and testing to the task.</p>
+</div>
+</details>
+
+<details>
+<summary>How much of the result came from existing software?</summary>
+<div class="answer">
+<p>A great deal of the foundation already existed. Three.js provides the graphics machinery. Rapier handles rigid-body physics. Vite runs and packages the web project. The agent wrote the code that arranged those pieces into this game, including the custom arena, car, rules, controls, and effects.</p>
+<p>That is normal software development. The significant capability is choosing and connecting useful parts, then correcting the places where their assumptions disagree. A physics engine does not know what a satisfying rocket-car jump should feel like. A renderer does not decide where the camera should go when the car reaches the backboard.</p>
+<p>There is no model call required for each frame of play. Once built, this game runs as ordinary JavaScript and physics code in the browser. AI was part of making the software; it is not the game’s runtime engine.</p>
+</div>
+</details>
+
+<details>
+<summary>What still does not come for free?</summary>
+<div class="answer">
+<p>Correctness, taste, and proof. This build produced a test command that passed without running tests, a camera that could enter the stands, and a proposed boost fix that disagreed with the reference. A persuasive explanation and a green terminal line can both be wrong.</p>
+<p>Tests answer the questions they exercise. A screenshot can show a missing surface but cannot establish that a five-minute match feels good. A phone-sized browser view can catch layout problems but cannot prove thumb comfort or sustained performance on a physical phone. The remaining human playtest was real unfinished work.</p>
+<p>The larger obligations of software remain too: protecting user data, handling failures, maintaining dependencies, paying for operation, and deciding who supports it later. This small browser game does not demonstrate those capabilities in a production service. Nor does a successful build settle ownership or permission to reuse somebody else’s assets.</p>
+</div>
+</details>
+
+<details>
+<summary>So what is still worth learning as a coder?</summary>
+<div class="answer">
+<p>Learn enough to make good requests and to recognize a bad answer. Follow an input through the program. Read an error message. Understand state, data structures, tests, version control, and the boundary between your code and a library. Those skills let you narrow a defect instead of repeatedly asking the agent to “fix it.”</p>
+<p>Use generated projects as material to investigate. Ask why a goal counts only after the whole ball crosses the line, predict what happens if that rule changes, then test your prediction. Change one parameter in the camera and compare the result. You can learn from code you did not type, provided you do the work of understanding it.</p>
+<p>This build suggests that more implementation can be delegated while the human concentrates on choosing the problem and judging the experience. It does not establish that software expertise is obsolete. Expertise helps you notice when an impressive demo has skipped the difficult part.</p>
+</div>
+</details>
+<p class="small muted" style="margin-top:1rem">Commentary added September 7, 2026. Build examples come from the account above and the repository’s <a href="https://github.com/lpcode808/RecreateRocketLeague/blob/main/docs/VERIFICATION.md">verification notes</a>. Model-specific operating advice was checked against <a href="https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md">OpenAI’s Astra guide</a>; the broader implications are interpretation, not measured productivity claims.</p>
+</section>
 
 <h2 id="limits">Honest limits</h2>
 <p><b>It is a playable rocket-car soccer game with a similar layout, and that is all it is.</b> The car, stadium, effects, and handling are custom approximations of the original. No human had played a full five-minute match when the evening ended, and the agent said so.</p>
