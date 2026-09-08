@@ -68,6 +68,19 @@
   .dek { font-size: 1.2rem; line-height: 1.5; max-width: 60ch; }
   .dek strong { font-weight: 600; }
 
+  /* original prompt */
+  .source-prompt { margin: 2rem 0 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--rule); }
+  .source-prompt summary { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; padding: 0.9rem 0; cursor: pointer; font-family: 'Sora', system-ui, sans-serif; font-size: 0.95rem; font-weight: 600; }
+  .source-prompt summary::marker { color: var(--orange); }
+  .source-prompt summary a { font-family: 'Rajdhani', 'Sora', system-ui, sans-serif; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+  .source-prompt .prompt-copy { max-width: var(--measure); padding: 0 0 1.5rem; }
+  .source-prompt h2 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+  .source-prompt h2:first-child { margin-top: 0.35rem; }
+  .source-prompt ul { margin: 0.5rem 0 1rem; padding-left: 1.35rem; }
+  .source-prompt li { margin: 0.2rem 0; }
+  .source-prompt ul ul { margin: 0.2rem 0; }
+  @media (max-width: 480px) { .source-prompt summary { align-items: flex-start; flex-direction: column; gap: 0.25rem; } }
+
   /* box score */
   .score { border-top: 3px solid var(--boost-blue); border-bottom: 1px solid var(--rule); margin: 2rem 0 0; }
   .score table { width: 100%; border-collapse: collapse; font-family: 'Sora', system-ui, sans-serif; font-size: 0.95rem; }
@@ -189,6 +202,90 @@
   <p class="dek">On September 4, 2026, a teacher in Honolulu pasted an 800-word wish list into an AI coding tool at 5:29 pm. By 9:56 pm a playable rocket-car soccer game was live on the web, with touch controls for phone-sized screens (tested in an emulator; no real phone yet). The human typed <strong>nine messages</strong> the whole evening. This page walks through what the AI actually did in between, minute by minute, for readers who have never written a line of code.</p>
   <p class="dek muted">The code itself is a rough recreation, and it says so about itself. What makes the evening worth studying is the speed, and the habits the AI kept while going fast: reading the rules first, checking its own work with screenshots, asking a second AI to find problems, and stopping to ask before publishing.</p>
 </header>
+
+<details class="source-prompt">
+  <summary><span>Read the full original build prompt</span><a href="https://x.com/LLMJunky/status/2096043707015274818?s=20">View post on X ↗</a></summary>
+  <div class="prompt-copy">
+    <p>Here's the prompt:</p>
+    <p>Build a polished browser-based 3D Rocket League-style game using Three.js.<br>Goal: Create a fully playable local web game that runs in the browser. The first screen should be the actual game, not a landing page.</p>
+
+    <h2>Tech requirements</h2>
+    <ul>
+      <li>Use Three.js for rendering.</li>
+      <li>Use a real physics engine, preferably Rapier.js, for car, ball, arena, wall, and goal physics.</li>
+      <li>Use TypeScript if the project already supports it, otherwise plain modern JavaScript is fine.</li>
+      <li>Use Vite for the dev server unless another stack already exists.</li>
+      <li>Keep the architecture clean: separate rendering, physics, controls, game state, UI/HUD, and assets.</li>
+    </ul>
+
+    <h2>Core gameplay</h2>
+    <ul>
+      <li>Third-person controllable rocket car.</li>
+      <li>Large soccer ball with believable bouncy physics.</li>
+      <li>Enclosed arena with side walls, back walls, ceiling or high invisible bounds, and two goals.</li>
+      <li>Score detection when the ball crosses fully into a goal.</li>
+      <li>Reset after each goal with a countdown.</li>
+      <li>Match timer and score display.</li>
+      <li>Boost system:
+        <ul><li>Boost meter from 0-100.</li><li>Hold boost key to accelerate with flame/trail effect.</li><li>Boost drains while active.</li><li>Boost pads around the arena refill boost.</li></ul>
+      </li>
+      <li>Jump system:
+        <ul><li>Single jump.</li><li>Optional second jump / flip if feasible.</li><li>Air control with pitch, yaw, and roll.</li></ul>
+      </li>
+      <li>Car should feel responsive and arcade-like, not like a slow simulator.</li>
+    </ul>
+
+    <h2>Controls</h2>
+    <ul><li>WASD or arrow keys: drive / steer.</li><li>Space: jump.</li><li>Shift: boost.</li><li>R: reset car.</li><li>C: toggle camera mode.</li><li>Esc or P: pause.</li></ul>
+
+    <h2>Camera</h2>
+    <ul><li>Smooth chase camera behind the car.</li><li>Camera should follow car rotation and velocity while remaining readable.</li><li>Optional ball-cam toggle that keeps the ball in view.</li></ul>
+
+    <h2>Visual design</h2>
+    <ul>
+      <li>Recreate a Rocket League-inspired feel, including branded-style presentation if desired.</li>
+      <li>Add a futuristic indoor stadium, colored goals, boost pads, arena trim, and energetic UI.</li>
+      <li>Add lighting, shadows, bloom or subtle postprocessing if performance allows.</li>
+      <li>Add clear team colors, goal colors, boost pad glow, trail effects, ball highlight, and simple particle effects.</li>
+      <li>Use generated, procedural, or available assets as appropriate.</li>
+      <li>Add a readable HUD with score, timer, boost meter, countdown, and goal celebration text.</li>
+      <li>Ensure the game works on common laptop screens and resizes correctly.</li>
+    </ul>
+
+    <h2>Physics feel</h2>
+    <ul><li>Prioritize fun over realism.</li><li>The ball should be heavy but responsive.</li><li>Cars should have strong acceleration, drift-friendly turning, and stable recovery.</li><li>Avoid cars flipping uncontrollably from minor bumps.</li><li>Tune gravity, friction, restitution, angular damping, and impulses until gameplay feels good.</li></ul>
+
+    <h2>AI / opponent</h2>
+    <ul>
+      <li>If time permits, add a simple bot opponent:
+        <ul><li>Bot chases the ball.</li><li>Bot aims roughly toward the player goal.</li><li>Bot can boost occasionally.</li><li>Bot should be beatable, not perfect.</li></ul>
+      </li>
+      <li>If bot is too risky, create a solo practice mode with two goals and a working scoreboard.</li>
+    </ul>
+
+    <h2>Implementation expectations</h2>
+    <ul><li>Build the complete working game, not just a prototype shell.</li><li>Include all source files.</li><li>Add brief comments only where the logic is non-obvious.</li><li>Avoid overengineering.</li><li>Do not create a marketing homepage.</li></ul>
+
+    <h2>Verification</h2>
+    <ul>
+      <li>Start the dev server.</li>
+      <li>Test the game in the browser.</li>
+      <li>Verify:
+        <ul><li>The scene renders.</li><li>The car moves, turns, jumps, and boosts.</li><li>The ball collides with the car and arena.</li><li>Goals are detected correctly.</li><li>Score and timer update.</li><li>Reset after goal works.</li><li>Boost pads refill boost.</li><li>The camera does not clip badly or lose the car.</li><li>No major console errors.</li></ul>
+      </li>
+      <li>Take at least one screenshot or use browser automation to confirm the canvas is nonblank.</li>
+    </ul>
+
+    <h2>Deliverable</h2>
+    <ul><li>A local runnable browser game.</li><li>Provide the dev server URL.</li><li>Summarize controls and what was implemented.</li></ul>
+
+    <p><strong>Quality bar:</strong> Make it feel like an arcade sports game people would actually want to play for five minutes. Spend extra effort tuning car handling, camera smoothing, ball impact, boost feel, and goal feedback. A technically complete but boring physics demo is not acceptable.</p>
+    <p>A few more bits of feedback. I would like for you to test the game and work back and forth until you have a very strong match to the original Rocket League, including the car design for the Octane. It all should look nearly identical to the original. We are not going to sell or reproduce this. It's just for a visual test, so it is okay to make it look the same, as it will never be distributed.</p>
+    <p>I want there to be infinite boosts by pressing B, and I want the UI to look extremely polished, like a real game. Make sure that the actual map also looks like Champions Field and is a strong match for the original and very polished. It should look very good.</p>
+    <p>The lighting and the gameplay should be true to life. The physics should feel correct according to the original game. Everything should work exactly the same as it did, from the flip resets to the tackles, to the goal explosions, to the smoke behind the ball when it goes fast, to all of the little small details that generally get missed.</p>
+    <p>I really want you to work in a loop and make sure that you are really comparing it to the original game, and I want you to keep iterating until the assets in the game look legitimate and real. You have as many tokens as you want to complete this task. I'm not in a rush at all. I think I just want it to look and play as best as possible. So iterate and take your time.</p>
+  </div>
+</details>
 
 <section class="score" aria-labelledby="score-cap">
   <table>
@@ -738,6 +835,7 @@
 <footer>
   <p><b>How this page was made.</b> The AI tool (OpenAI's Codex desktop app) keeps a full log of every session as line-by-line JSON files, about 80 megabytes across 23 threads for this project. Those logs record every command run, every file written, every screenshot inspected, every message between agents, and every safety judgment. They do not include the models' private reasoning, which is stored encrypted. The logs were condensed by script, summarized thread by thread by Claude (Sonnet subagents doing the reading, Fable 5.1 doing the writing), and cross-checked against the repository's own README, HANDOFF, and VERIFICATION documents. Screenshots are the agent's own test captures from that night. All times are Hawaiʻi Standard Time.</p>
   <p>Play the result: <a href="../">Champions Field</a>. Read the source and the handoff notes: <a href="https://github.com/lpcode808/RecreateRocketLeague">github.com/lpcode808/RecreateRocketLeague</a>. Rocket League, Octane, and Champions Field are trademarks of Psyonix LLC and Epic Games; this recreation is a non-commercial study and bundles none of the original's assets.</p>
+  <p>Original build prompt: <a href="https://x.com/LLMJunky/status/2096043707015274818?s=20">@LLMJunky’s post on X</a>.</p>
 </footer>
 
 </div>
